@@ -9,7 +9,7 @@ A fast, calm, eye-friendly open-source Android app for searching Prophetic Hadit
   - **حسن (Hasan):** `حسن` (`Hasan`) · `إسناده حسن` (`Hasan chain`)
   - **لم يصح (Unauthentic):** `إسناده ضعيف` (`Weak chain`) · `ضعيف` (`Weak`) · `ضعيف جداً` (`Very weak`) · `منكر` (`Munkar`) · `موضوع` (`Fabricated`) · `باطل / لا أصل له` (`Baseless`)
   - **Special:** `حكم مفصّل` (`Detailed ruling`) for compound/split scholar verdicts and narrator notes
-- **Classical Hadith-Science Glossary:** Tapping any badge displays its plain explanation alongside verified verbatim definitions from classical manuals (*مقدمة ابن الصلاح*, *نزهة النظر*, *تحرير علوم الحديث*).
+- **Classical Hadith-Science Glossary:** Tapping any badge displays its plain explanation alongside verified, self-contained verbatim definitions from standard Hadith-science works (*مقدمة ابن الصلاح*, *تيسير مصطلح الحديث*, *منهج النقد في علوم الحديث*, and *الوسيط في علوم ومصطلح الحديث*).
 - **Scholarly Depth on Demand:**
   - Inline **التخريج (Primary Sources)** and exact verbatim scholar attribution (`حكم <المحدث>:`) on every card.
   - **المصادر الأصلية (Original Sources):** On-demand full verbatim passages and complete narrator chains (**أصول الحديث بالأسانيد**) from Al-Dorar without fabricating rulings on them.

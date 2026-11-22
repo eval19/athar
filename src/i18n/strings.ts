@@ -101,71 +101,70 @@ const AR_STRINGS: AppStrings = {
   gradeDefinitions: {
     sahih: {
       quote:
-        'هُوَ الْحَدِيثُ الْمُسْنَدُ الَّذِي يَتَّصِلُ إِسْنَادُهُ بِنَقْلِ الْعَدْلِ الضَّابِطِ عَنِ الْعَدْلِ الضَّابِطِ إِلَى مُنْتَهَاهُ، وَلَا يَكُونُ شَاذًّا، وَلَا مُعَلَّلًا.',
+        'أَمَّا الْحَدِيثُ الصَّحِيحُ: فَهُوَ الْحَدِيثُ الْمُسْنَدُ الَّذِي يَتَّصِلُ إِسْنَادُهُ بِنَقْلِ الْعَدْلِ الضَّابِطِ عَنِ الْعَدْلِ الضَّابِطِ إِلَى مُنْتَهَاهُ، وَلَا يَكُونُ شَاذًّا، وَلَا مُعَلَّلًا.',
       source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
       summary:
         'بمعنى مُبسّط: حديث ثابت متصل الإسناد برواة ثقات ضابطين بلا شذوذ ولا علة خفية؛ يُحتجّ به ويُعمل به.',
     },
     sahih_isnad: {
       quote:
-        'قَوْلُهُمْ " هَذَا حَدِيثٌ صَحِيحُ الْإِسْنَادِ، أَوْ حَسَنُ الْإِسْنَادِ " دُونَ قَوْلِهِمْ: " هَذَا حَدِيثٌ صَحِيحٌ أَوْ حَدِيثٌ حَسَنٌ " لِأَنَّهُ قَدْ يُقَالُ: " هَذَا حَدِيثٌ صَحِيحُ الْإِسْنَادِ "، وَلَا يَصِحُّ، لِكَوْنِهِ شَاذًّا أَوْ مُعَلَّلًا. غَيْرَ أَنَّ الْمُصَنِّفَ الْمُعْتَمَدَ مِنْهُمْ إِذَا اقْتَصَرَ عَلَى قَوْلِهِ: إِنَّهُ صَحِيحُ الْإِسْنَادِ، وَلَمْ يَذْكُرْ لَهُ عِلَّةً، وَلَمْ يَقْدَحْ فِيهِ، فَالظَّاهِرُ مِنْهُ الْحُكْمُ لَهُ بِأَنَّهُ صَحِيحٌ فِي نَفْسِهِ.',
-      source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
+        'فكأن المحدِّث إذا قال: "هذا حديث صحيح" قد تكفل لنا بتوفر شروط الصحة الخمسة في هذا الحديث، أما إذا قال: "هذا حديث صحيح الإسناد" فقد تكفل لنا بتوفر شروط ثلاثة من شروط الصحة، وهي: اتصال الإسناد، وعدالة الرواة وضبطهم، أما نفي الشذوذ، ونفي العلة عنه، فلم يتكفل بهما؛ لأنه لم يتثبت منهما. لكن لو اقتصر حافظ معتمد على قوله: "هذا حديث صحيح الإسناد" ولم يذكر له علة، فالظاهر صحة المتن؛ لأن الأصل عدم العلة، وعدم الشذوذ.',
+      source: 'د. محمود الطحان — تيسير مصطلح الحديث',
       summary:
         'بمعنى مُبسّط: رواته ثقات وإسناده متصل، والأصل قَبوله والعمل به ما لم يثبت فيه شذوذ أو علة خفية عند نقّاد الحديث.',
     },
     hasan: {
       quote:
-        'فإنْ خَفَّ الضبطُ… والمرادُ مع بقية الشروط المتقدِّمة في حدِّ الصحيح فهو الحَسَنُ لِذَاتِه.',
-      source: 'ابن حجر العسقلاني — نزهة النظر في توضيح نخبة الفكر',
+        'الحديث الحسن: هو الحديث الذي اتصل سنده بنقل عدل خف ضبطه غير شاذ ولا معلل.',
+      source: 'د. نور الدين عتر — منهج النقد في علوم الحديث (معتمدًا تعريف ابن حجر)',
       summary:
         'بمعنى مُبسّط: حديث مقبول وثابت تتوفر فيه شروط الصحيح لكن حفظ بعض رواته أخفّ قليلًا؛ يُحتجّ به ويُعمل به.',
     },
     hasan_isnad: {
       quote:
-        'قَوْلُهُمْ " هَذَا حَدِيثٌ صَحِيحُ الْإِسْنَادِ، أَوْ حَسَنُ الْإِسْنَادِ " دُونَ قَوْلِهِمْ: " هَذَا حَدِيثٌ صَحِيحٌ أَوْ حَدِيثٌ حَسَنٌ " لِأَنَّهُ قَدْ يُقَالُ: " هَذَا حَدِيثٌ صَحِيحُ الْإِسْنَادِ "، وَلَا يَصِحُّ، لِكَوْنِهِ شَاذًّا أَوْ مُعَلَّلًا.',
-      source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
+        'قولهم: "هذا حديث حسن الإسناد" دون قولهم: "هذا حديث حسن"؛ لأنه قد يصلح أو يحسن الإسناد دون المتن؛ لشذوذ أو علة.',
+      source: 'د. محمود الطحان — تيسير مصطلح الحديث',
       summary:
         'بمعنى مُبسّط: هذا الإسناد بعينه حسن ومقبول عند المحدث، والأصل الاحتجاج به ما لم يُبيّن فيه شذوذ أو علة.',
     },
     daif_isnad: {
       quote:
-        'لَيْسَ كُلُّ ضَعْفٍ فِي الْحَدِيثِ يَزُولُ بِمَجِيئِهِ مِنْ وُجُوهٍ، بَلْ ذَلِكَ يَتَفَاوَتُ: فَمِنْهُ ضَعْفٌ يُزِيلُهُ ذَلِكَ بِأَنْ يَكُونَ ضَعْفُهُ نَاشِئًا مِنْ ضَعْفِ حِفْظِ رَاوِيهِ، مَعَ كَوْنِهِ مِنْ أَهْلِ الصِّدْقِ وَالدِّيَانَةِ.',
+        'إِذَا رَأَيْتَ حَدِيثًا بِإِسْنَادٍ ضَعِيفٍ فَلَكَ أَنْ تَقُولَ: هَذَا ضَعِيفٌ، وَتَعْنِيَ أَنَّهُ بِذَلِكَ الْإِسْنَادِ ضَعِيفٌ، وَلَيْسَ لَكَ أَنْ تَقُولَ هَذَا ضَعِيفٌ وَتَعْنِي بِهِ ضَعْفَ مَتْنِ الْحَدِيثِ بِنَاءً عَلَى مُجَرَّدِ ضَعْفِ ذَلِكَ الْإِسْنَادِ، فَقَدْ يَكُونُ مَرْوِيًّا بِإِسْنَادٍ آخَرَ صَحِيحٍ يَثْبُتُ بِمِثْلِهِ الْحَدِيثُ.',
       source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
       summary:
         'بمعنى مُبسّط: الضعف هنا في هذا الإسناد بعينه، ولا يلزم منه ضعف المتن دائمًا فقد يثبت الحديث من طريق آخر صحيح.',
     },
     daif: {
       quote:
-        'كُلُّ حَدِيثٍ لَمْ يَجْتَمِعْ فِيهِ صِفَاتُ الْحَدِيثِ الصَّحِيحِ، وَلَا صِفَاتُ الْحَدِيثِ الْحَسَنِ الْمَذْكُورَاتُ فِيمَا تَقَدَّمَ، فَهُوَ حَدِيثٌ ضَعِيفٌ.',
-      source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
+        'أحسن ما يعرف به الحديث الضعيف هو: ما فقد شرطا من شروط الحديث المقبول. وشروط الحديث المقبول ستة هي: العدالة: الضبط "ولو لم يكن تاما"، الاتصال، فقد الشذوذ، فقد العلة القادحة، العاضد عند الاحتياج إليه.',
+      source: 'د. نور الدين عتر — منهج النقد في علوم الحديث',
       summary:
         'بمعنى مُبسّط: حديث فقد شرطًا أو أكثر من شروط القبول كضعف راوٍ أو انقطاع سند؛ لا يُنسب جزمًا للنبي ﷺ.',
     },
     very_weak: {
       quote:
-        'وَمِنْ ذَلِكَ ضَعْفٌ لَا يَزُولُ بِنَحْوِ ذَلِكَ، لِقُوَّةِ الضَّعْفِ وَتَقَاعُدِ هَذَا الْجَابِرِ عَنْ جَبْرِهِ وَمُقَاوَمَتِهِ، وَذَلِكَ كَالضَّعْفِ الَّذِي يَنْشَأُ مِنْ كَوْنِ الرَّاوِي مُتَّهَمًا بِالْكَذِبِ، أَوْ كَوْنِ الْحَدِيثِ شَاذًّا.',
-      source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
+        'وقد ميز المحدثون بين مراتب الضعف الناشيء من القدح في رجاله، فهناك الضعف الذي يقبل التقوية وهذا يسمونه ضعيفا أيا كان سبب ضعفه، وهناك الضعف الشديد الذي لا ينجبر وهذا يطلقون عليه أيضا الضعيف ويؤخذ من تعابيرهم تمييزه كقولهم ضعيف جدا. أو فيه فلان متروك أو متهم.',
+      source: 'د. نور الدين عتر — منهج النقد في علوم الحديث',
       summary:
         'بمعنى مُبسّط: حديث شديد الضعف لوجود راوٍ متروك أو متهم بالكذب أو فاحش الغلط؛ لا يُحتجّ به ولا يتقوى بغيره.',
     },
     munkar: {
-      quote:
-        'وإنْ وقعتِ المُخَالَفَةُ مع الضَّعْفِ فالرَّاجِحُ يُقَالُ له المعروفُ، ومُقَابِلُه يقالُ له المُنْكَرُ.',
-      source: 'ابن حجر العسقلاني — نزهة النظر في توضيح نخبة الفكر',
+      quote: 'المنكر ما رواه الضعيف مخالفا لما رواه الثقة.',
+      source: 'د. محمود الطحان — تيسير مصطلح الحديث (معتمدًا تعريف ابن حجر)',
       summary:
         'بمعنى مُبسّط: حديث رواه راوٍ ضعيف مخالفًا به رواية الثقات؛ وهو مردود ولا يُحتجّ به.',
     },
     mawdu: {
       quote:
-        'وَهُوَ الْمُخْتَلَقُ الْمَصْنُوعُ… الْحَدِيثُ الْمَوْضُوعُ شَرُّ الْأَحَادِيثِ الضَّعِيفَةِ، وَلَا تَحِلُّ رِوَايَتُهُ لِأَحَدٍ عَلِمَ حَالَهُ فِي أَيِّ مَعْنًى كَانَ إِلَّا مَقْرُونًا بِبَيَانِ وَضْعِهِ.',
-      source: 'ابن الصلاح — معرفة أنواع علوم الحديث (مقدمة ابن الصلاح)',
+        'الحديث الموضوع: هو المختلق المصنوع. أي الذي ينسب إلى رسول الله صلى الله عليه وسلم كذبا، وليس له صلة حقيقية بالنبي صلى الله عليه وسلم.',
+      source: 'د. نور الدين عتر — منهج النقد في علوم الحديث',
       summary:
         'بمعنى مُبسّط: حديث مكذوب ومختلق نُسب زورًا إلى النبي ﷺ؛ لا يجوز روايته أو نشره إلا لبيان بطلانه.',
     },
     batil: {
       quote:
-        'كان يستعمل في عرف السلف في الحديث يروى بإسناد، لكنه خطأ أو باطل لا حقيقة له ولم يوجد أصلاً… وإذا حكموا بذلك على الحديث أرادوا: لا أصل له عن النبي صلى الله عليه وسلم.',
-      source: 'عبد الله الجديع — تحرير علوم الحديث',
+        'الألفاظ الدالة على الوضع: من ذلك قولهم: هذا حديث موضوع، أو كذب، أو باطل، أو لا أعرفه إذا صرح بذلك أحد الأئمة الكبار، وكذا قولهم: هذا الحديث لا أصل له، أي ليس له إسناد يعرف.',
+      source: 'د. محمد محمد أبو شهبة — الوسيط في علوم ومصطلح الحديث',
       summary:
         'بمعنى مُبسّط: نص لا إسناد له أصلًا أو باطل الإسناد؛ لا يصح نسبته إلى النبي ﷺ.',
     },
@@ -252,7 +251,7 @@ const AR_STRINGS: AppStrings = {
   aboutSection: 'المصدر والأمانة العلمية',
   aboutCredit:
     'جميع نصوص الأحاديث وأحكام المحدثين مستمدة مباشرة من الموسوعة الحديثية — موقع الدرر السنية (dorar.net) دون تعديل.',
-  aboutVersion: 'الإصدار 1.0',
+  aboutVersion: 'الإصدار 1.0.1',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
 };
@@ -286,71 +285,71 @@ const EN_STRINGS: AppStrings = {
   gradeDefinitions: {
     sahih: {
       quote:
-        "The connected narration whose chain links upright, accurate narrators from start to end, free from anomaly (shudhudh) and hidden defect ('illah).",
+        "As for the Sahih hadith: it is the connected narration whose chain links upright, accurate narrators from start to end, free from anomaly (shudhudh) and hidden defect ('illah).",
       source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
       summary:
         'In plain words: An authentic, unbroken narration transmitted by trustworthy, precise narrators; relied upon in belief and practice.',
     },
     sahih_isnad: {
       quote:
-        'Their saying "this hadith has a Sahih chain (isnad) or a Hasan chain" falls short of saying "this hadith is Sahih or Hasan", because a chain may be Sahih yet the hadith not authentic due to anomaly or a hidden defect — though when a reliable scholar limits himself to saying its chain is Sahih without mentioning a defect, the apparent ruling is that it is authentic.',
-      source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
+        'When a scholar says "this hadith is Sahih," he vouches for all five conditions of authenticity; when he says "its chain (isnad) is Sahih," he vouches for three — unbroken chain, upright narrators, and precision — without explicitly ruling out anomaly or hidden defect. Yet if a reliable scholar stops at saying its chain is Sahih without noting a defect, the text is apparently authentic since freedom from defect is the default.',
+      source: 'Dr. Mahmud al-Tahhan — Taysir Mustalah al-Hadith',
       summary:
         'In plain words: The chain of narrators is trustworthy and unbroken; generally accepted unless scholars identify a hidden defect in the text.',
     },
     hasan: {
       quote:
-        'If precision (dabt) is lighter — while all remaining conditions of Sahih are met — then it is Hasan li-dhatihi (sound in itself).',
-      source: "Ibn Hajar al-'Asqalani — Nuzhat al-Nazar fi Tawdih Nukhbat al-Fikar",
+        "The Hasan hadith is a narration whose chain is unbroken through upright narrators with lighter precision, free from anomaly (shudhudh) and hidden defect ('illah).",
+      source: "Dr. Nur al-Din 'Itr — Manhaj al-Naqd fi 'Ulum al-Hadith (after Ibn Hajar)",
       summary:
         'In plain words: An accepted, reliable narration whose narrators are trustworthy with slightly lighter precision than Sahih.',
     },
     hasan_isnad: {
       quote:
-        'Their saying "this hadith has a Sahih chain or a Hasan chain" falls short of saying "this hadith is Sahih or Hasan", because a chain may appear sound while a hidden defect or anomaly exists.',
-      source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
+        'Their saying "this hadith has a Hasan chain (isnad)" falls short of saying "this hadith is Hasan," because the chain may be sound while the text is not due to an anomaly or hidden defect.',
+      source: 'Dr. Mahmud al-Tahhan — Taysir Mustalah al-Hadith',
       summary:
         'In plain words: This specific chain of narrators is sound (Hasan); generally relied upon unless a hidden defect is noted.',
     },
     daif_isnad: {
       quote:
-        'Not every weakness in a hadith is removed by coming through other routes; rather it varies — some weakness arises only from light memory in an honest narrator and can be strengthened by corroborating chains.',
+        'If you see a hadith with a weak chain, you may say it is weak by that chain — but you may not declare the text itself weak based solely on the weakness of that chain, for it may be narrated through another authentic chain by which the hadith is established.',
       source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
       summary:
         'In plain words: This specific chain is weak — though the wording itself may still be authentic through another stronger chain.',
     },
     daif: {
       quote:
-        "Every hadith that fails to combine the attributes of a Sahih hadith and the attributes of a Hasan hadith is a Da'if (weak) hadith.",
-      source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
+        "The best definition of a Da'if (weak) hadith is one missing any condition of an accepted hadith — uprightness, precision (even if light), an unbroken chain, absence of anomaly, absence of a disqualifying defect, and corroboration when needed.",
+      source: "Dr. Nur al-Din 'Itr — Manhaj al-Naqd fi 'Ulum al-Hadith",
       summary:
         'In plain words: A narration missing one or more conditions of authenticity (e.g. a broken chain or weak narrator); not definitively attributed to the Prophet ﷺ.',
     },
     very_weak: {
       quote:
-        'Among weakness is a weakness that does not disappear through corroboration due to its severity — such as when a narrator is accused of lying.',
-      source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
+        'Scholars distinguish degrees of weakness arising from narrator criticism: mild weakness that can be strengthened (called Da\'if), and severe weakness that cannot be repaired — distinguished by phrases such as "very weak" (da\'if jiddan) or noting a discarded (matruk) or suspect narrator.',
+      source: "Dr. Nur al-Din 'Itr — Manhaj al-Naqd fi 'Ulum al-Hadith",
       summary:
         'In plain words: A severely weak narration with a discarded, severely mistaken, or suspect narrator; cannot be relied upon or strengthened.',
     },
     munkar: {
       quote:
-        "If contradiction occurs alongside weakness in the narrator, the stronger report is called al-Ma'ruf and its counterpart is called al-Munkar.",
-      source: "Ibn Hajar al-'Asqalani — Nuzhat al-Nazar fi Tawdih Nukhbat al-Fikar",
+        'Al-Munkar is what a weak narrator transmits in contradiction to what a trustworthy narrator transmits.',
+      source: 'Dr. Mahmud al-Tahhan — Taysir Mustalah al-Hadith (after Ibn Hajar)',
       summary:
         'In plain words: A rejected report in which a weak narrator contradicts trustworthy narrators; cannot be relied upon.',
     },
     mawdu: {
       quote:
-        'It is the invented, fabricated report — the worst of weak reports, and it is not permissible for anyone who knows its state to narrate it except while clarifying its fabrication.',
-      source: "Ibn al-Salah — Muqaddimat Ibn al-Salah (Ma'rifat Anwa' 'Ulum al-Hadith)",
+        'The fabricated (Mawdu\') hadith is the invented, manufactured report — falsely attributed to the Messenger of Allah ﷺ with no real connection to him.',
+      source: "Dr. Nur al-Din 'Itr — Manhaj al-Naqd fi 'Ulum al-Hadith",
       summary:
         'In plain words: A falsely invented narration attributed to the Prophet ﷺ; must not be shared except to warn against it.',
     },
     batil: {
       quote:
-        'Used by the early scholars for a report with a false or nonexistent basis; when applied to a hadith, it means it has no origin from the Prophet ﷺ.',
-      source: "'Abdullah al-Juday' — Tahrir 'Ulum al-Hadith",
+        'Expressions indicating fabrication include saying: "this hadith is fabricated (mawdu\')," "a lie," "baseless (batil)," or "I do not know it" when stated by a major master — as well as saying "this hadith has no origin (la asla lahu)," meaning it has no known chain of transmission.',
+      source: 'Dr. Muhammad Abu Shahbah — Al-Wasit fi \'Ulum wa Mustalah al-Hadith',
       summary:
         'In plain words: A baseless report with no valid chain or origin in the Hadith corpus; cannot be attributed to the Prophet ﷺ.',
     },
@@ -428,7 +427,7 @@ const EN_STRINGS: AppStrings = {
   aboutSection: 'Source & Attribution',
   aboutCredit:
     'All hadith texts and scholar verdicts are retrieved live and verbatim from the Al-Dorar Al-Saniyyah Hadith Encyclopedia (dorar.net).',
-  aboutVersion: 'Version 1.0',
+  aboutVersion: 'Version 1.0.1',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
 };
