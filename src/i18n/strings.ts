@@ -17,6 +17,8 @@ export interface AppStrings {
   grades: Record<GradeBucket, string>;
   gradeDefinitions: Record<GradeBucket, GradeDefinition>;
   gradeHelpAria: (gradeLabel: string) => string;
+  gradeHintPrompt: string;
+  dismissHint: string;
   otherRulingsLabel: (count: number) => string;
   narratorLabel: string;
   narratorPrefix: string;
@@ -174,6 +176,8 @@ const AR_STRINGS: AppStrings = {
     },
   },
   gradeHelpAria: (gradeLabel) => `عرض معنى درجة «${gradeLabel}»`,
+  gradeHintPrompt: 'اضغط على الدرجة لمعرفة معناها',
+  dismissHint: 'إخفاء التلميح',
   otherRulingsLabel: (count) =>
     count === 1
       ? 'حكم ومصدر آخر لنفس الحديث'
@@ -251,7 +255,7 @@ const AR_STRINGS: AppStrings = {
   aboutSection: 'المصدر والأمانة العلمية',
   aboutCredit:
     'جميع نصوص الأحاديث وأحكام المحدثين مستمدة مباشرة من الموسوعة الحديثية — موقع الدرر السنية (dorar.net) دون تعديل.',
-  aboutVersion: 'الإصدار 1.0.1',
+  aboutVersion: 'الإصدار 1.0.2',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
 };
@@ -359,6 +363,8 @@ const EN_STRINGS: AppStrings = {
     },
   },
   gradeHelpAria: (gradeLabel) => `Explain what "${gradeLabel}" means`,
+  gradeHintPrompt: 'Tap any badge to see its meaning',
+  dismissHint: 'Dismiss tip',
   otherRulingsLabel: (count) =>
     count === 1
       ? '+1 other scholar & source'
@@ -427,7 +433,7 @@ const EN_STRINGS: AppStrings = {
   aboutSection: 'Source & Attribution',
   aboutCredit:
     'All hadith texts and scholar verdicts are retrieved live and verbatim from the Al-Dorar Al-Saniyyah Hadith Encyclopedia (dorar.net).',
-  aboutVersion: 'Version 1.0.1',
+  aboutVersion: 'Version 1.0.2',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
 };

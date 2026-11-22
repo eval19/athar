@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Loader2, Sparkles } from 'lucide-react';
+import {
+  markGradeHintDiscovered,
+  recordGradeHintShown,
+  shouldShowGradeHint,
+} from './domain/gradeHint';
 import { groupDuplicateHadiths } from './domain/groupHadiths';
 import type {
   HadithResult,
@@ -15,9 +20,11 @@ import { syncNativeSystemBars } from './services/nativeChrome';
 import {
   applyLocaleToDocument,
   applyThemeToDocument,
+  loadGradeHintState,
   loadLocale,
   loadReadingScale,
   loadThemePreference,
+  saveGradeHintState,
   saveLocale,
   saveReadingScale,
   saveThemePreference,
@@ -47,6 +54,8 @@ export default function App() {
   );
   const [readingScale, setReadingScale] = useState<ReadingScale>(() => loadReadingScale());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showGradeHint, setShowGradeHint] = useState(false);
+  const sessionHintCheckedRef = useRef(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
@@ -128,6 +137,37 @@ export default function App() {
     },
     [locale, showToast, strings.sharedCopiedFallback],
   );
+
+  // Show the contextual grade-badge hint on the first result card once per 3-day cadence until discovered
+  useEffect(() => {
+    if (
+      sessionHintCheckedRef.current ||
+      search.isLoading ||
+      search.hasError ||
+      groupedItems.length === 0
+    ) {
+      return;
+    }
+    sessionHintCheckedRef.current = true;
+    const state = loadGradeHintState();
+    const now = Date.now();
+    if (shouldShowGradeHint(state, now)) {
+      saveGradeHintState(recordGradeHintShown(state, now));
+      setShowGradeHint(true);
+    }
+  }, [search.isLoading, search.hasError, groupedItems.length]);
+
+  const handleGradeBadgeOpened = useCallback(() => {
+    const current = loadGradeHintState();
+    if (!current.discovered) {
+      saveGradeHintState(markGradeHintDiscovered(current));
+    }
+    setShowGradeHint(false);
+  }, []);
+
+  const handleDismissGradeHint = useCallback(() => {
+    setShowGradeHint(false);
+  }, []);
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
@@ -234,9 +274,12 @@ export default function App() {
                   highlightQuery={search.effectiveQuery || search.activeQuery}
                   readingScale={readingScale}
                   deferred={idx >= 3}
+                  showGradeHint={idx === 0 && showGradeHint}
                   strings={strings}
                   onCopy={handleCopy}
                   onShare={handleShare}
+                  onGradeBadgeOpened={handleGradeBadgeOpened}
+                  onDismissGradeHint={handleDismissGradeHint}
                   onFetchOsoul={search.fetchOsoul}
                   onFetchAltSahih={search.fetchAltSahih}
                   onFetchSimilar={search.fetchSimilar}

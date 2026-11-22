@@ -26,9 +26,12 @@ interface HadithCardProps {
   highlightQuery: string;
   readingScale: ReadingScale;
   deferred?: boolean;
+  showGradeHint?: boolean;
   strings: AppStrings;
   onCopy: (hadith: HadithResult) => Promise<void>;
   onShare: (hadith: HadithResult) => Promise<void>;
+  onGradeBadgeOpened?: () => void;
+  onDismissGradeHint?: () => void;
   onFetchOsoul?: (dorarId: string) => Promise<OsoulEntry[]>;
   onFetchAltSahih?: (dorarId: string) => Promise<HadithResult[]>;
   onFetchSimilar?: (dorarId: string) => Promise<HadithResult[]>;
@@ -46,9 +49,12 @@ export const HadithCard = memo(function HadithCard({
   highlightQuery,
   readingScale,
   deferred = false,
+  showGradeHint = false,
   strings,
   onCopy,
   onShare,
+  onGradeBadgeOpened,
+  onDismissGradeHint,
   onFetchOsoul,
   onFetchAltSahih,
   onFetchSimilar,
@@ -148,6 +154,16 @@ export const HadithCard = memo(function HadithCard({
     window.setTimeout(() => setJustCopied(false), 1800);
   };
 
+  const handleToggleGradeHelp = () => {
+    setShowGradeHelp((prev) => !prev);
+    onGradeBadgeOpened?.();
+  };
+
+  const handleOpenGradeFromHint = () => {
+    setShowGradeHelp(true);
+    onGradeBadgeOpened?.();
+  };
+
   return (
     <article
       className={`rounded-2xl border border-line bg-surface p-4 sm:p-5 transition-colors${
@@ -160,7 +176,8 @@ export const HadithCard = memo(function HadithCard({
           bucket={hadith.gradeBucket}
           strings={strings}
           expanded={showGradeHelp}
-          onToggleInfo={() => setShowGradeHelp((prev) => !prev)}
+          hintPulse={showGradeHint && !showGradeHelp}
+          onToggleInfo={handleToggleGradeHelp}
         />
 
         {hadith.narrator && (
@@ -175,6 +192,34 @@ export const HadithCard = memo(function HadithCard({
           </div>
         )}
       </div>
+
+      {/* Gentle contextual first-time discovery callout pointing to the grade badge */}
+      {showGradeHint && !showGradeHelp && (
+        <div role="status" className="coach-hint-reveal relative mb-3">
+          <span
+            aria-hidden="true"
+            className="coach-hint-border pointer-events-none absolute -top-[5px] start-5 h-2.5 w-2.5 rotate-45 border-l border-t bg-brand-soft"
+          />
+          <div className="coach-hint-border flex items-center justify-between gap-2 rounded-xl border bg-brand-soft px-3 py-2 text-xs text-ink">
+            <button
+              type="button"
+              onClick={handleOpenGradeFromHint}
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-start font-medium text-ink transition-opacity active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
+              <span className="leading-snug">{strings.gradeHintPrompt}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onDismissGradeHint}
+              aria-label={strings.dismissHint}
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Inline classical book definition + plain summary when grade badge is tapped */}
       {showGradeHelp && (

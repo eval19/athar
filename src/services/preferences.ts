@@ -1,3 +1,7 @@
+import {
+  type GradeHintState,
+  parseGradeHintState,
+} from '../domain/gradeHint';
 import type { Locale, ReadingScale, ThemePreference } from '../domain/hadith';
 
 export const STORAGE_KEYS = {
@@ -5,6 +9,7 @@ export const STORAGE_KEYS = {
   locale: 'athar:locale',
   readingScale: 'athar:reading-scale',
   recentSearches: 'athar:recent-searches',
+  gradeHint: 'athar:grade-hint',
 } as const;
 
 const MAX_RECENT = 6;
@@ -121,4 +126,12 @@ export function removeRecentSearch(current: string[], query: string): string[] {
 export function clearRecentSearches(): string[] {
   safeRemove(STORAGE_KEYS.recentSearches);
   return [];
+}
+
+export function loadGradeHintState(): GradeHintState {
+  return parseGradeHintState(safeGet(STORAGE_KEYS.gradeHint));
+}
+
+export function saveGradeHintState(state: GradeHintState): void {
+  safeSet(STORAGE_KEYS.gradeHint, JSON.stringify(state));
 }

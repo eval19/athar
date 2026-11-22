@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   Ban,
   CheckCircle2,
+  ChevronDown,
   Info,
   Sparkles,
 } from 'lucide-react';
@@ -13,6 +14,7 @@ interface GradeBadgeProps {
   bucket: GradeBucket;
   strings: AppStrings;
   expanded?: boolean;
+  hintPulse?: boolean;
   onToggleInfo?: () => void;
   size?: 'sm' | 'md';
   count?: number;
@@ -36,6 +38,7 @@ export function GradeBadge({
   bucket,
   strings,
   expanded,
+  hintPulse = false,
   onToggleInfo,
   size = 'md',
   count,
@@ -79,9 +82,17 @@ export function GradeBadge({
         aria-expanded={Boolean(expanded)}
         aria-label={strings.gradeHelpAria(label)}
         style={{ backgroundColor: style.bg, color: style.color }}
-        className={`inline-flex items-center rounded-full font-semibold leading-none transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${sizeClass}`}
+        className={`inline-flex items-center rounded-full font-semibold leading-none transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${sizeClass}${
+          hintPulse && !expanded ? ' grade-badge-hint' : ''
+        }`}
       >
         {content}
+        <ChevronDown
+          className={`h-3 w-3 shrink-0 opacity-65 transition-transform duration-150${
+            expanded ? ' rotate-180' : ''
+          }`}
+          aria-hidden="true"
+        />
       </button>
     );
   }
