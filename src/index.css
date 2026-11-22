@@ -1,0 +1,476 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+
+  /* Raw palette tokens */
+  --canvas-light: #faf9f6;
+  --canvas-dark: #0e1312;
+
+  --dock-light: rgba(250, 249, 246, 0.76);
+  --dock-dark: rgba(14, 19, 18, 0.72);
+
+  --surface-light: #ffffff;
+  --surface-dark: #151c1a;
+
+  --elevated-light: #f4f1ea;
+  --elevated-dark: #1b2522;
+
+  --subtle-light: #efece4;
+  --subtle-dark: #202c28;
+
+  --ink-light: #18201e;
+  --ink-dark: #f2f4f2;
+
+  --muted-light: #52605c;
+  --muted-dark: #a6b4af;
+
+  --faint-light: #768480;
+  --faint-dark: #7d8d88;
+
+  --border-light: #e5e1d8;
+  --border-dark: #24322e;
+
+  --border-strong-light: #d2ccc0;
+  --border-strong-dark: #334640;
+
+  --brand-light: #0f5c4a;
+  --brand-dark: #34a88b;
+
+  --brand-soft-light: #e6f2ee;
+  --brand-soft-dark: #14322a;
+
+  --brand-ink-light: #ffffff;
+  --brand-ink-dark: #061813;
+
+  --gold-light: #b88a32;
+  --gold-dark: #dfb968;
+
+  --gold-soft-light: #fef4d6;
+  --gold-soft-dark: #362c14;
+
+  --mark-bg-light: #fdeeb8;
+  --mark-bg-dark: #473812;
+  --mark-ink-light: #151a19;
+  --mark-ink-dark: #fef5d7;
+
+  /* Grade badge tokens (severity ladder: Sahih -> Hasan -> Daif -> Very Weak/Munkar -> Mawdu/Batil -> Detailed) */
+  --sahih-bg-light: #e7f5ef;
+  --sahih-bg-dark: #123328;
+  --sahih-ink-light: #0c5942;
+  --sahih-ink-dark: #6ee7b7;
+
+  --hasan-bg-light: #e8f2f8;
+  --hasan-bg-dark: #142c3b;
+  --hasan-ink-light: #145374;
+  --hasan-ink-dark: #7dd3fc;
+
+  --daif-bg-light: #fef3e2;
+  --daif-bg-dark: #342613;
+  --daif-ink-light: #935308;
+  --daif-ink-dark: #fbbf24;
+
+  --severe-bg-light: #fdece8;
+  --severe-bg-dark: #3b1e16;
+  --severe-ink-light: #a6341b;
+  --severe-ink-dark: #fda48a;
+
+  --mawdu-bg-light: #fbe6e9;
+  --mawdu-bg-dark: #3d141c;
+  --mawdu-ink-light: #93162a;
+  --mawdu-ink-dark: #fda4af;
+
+  --unknown-bg-light: #eeece6;
+  --unknown-bg-dark: #252c2a;
+  --unknown-ink-light: #4e5955;
+  --unknown-ink-dark: #cbd5d1;
+
+  /* Default (light) semantic tokens — fallback for older WebViews */
+  --bg-canvas: var(--canvas-light);
+  --bg-dock: var(--dock-light);
+  --bg-surface: var(--surface-light);
+  --bg-elevated: var(--elevated-light);
+  --bg-subtle: var(--subtle-light);
+  --text-primary: var(--ink-light);
+  --text-secondary: var(--muted-light);
+  --text-tertiary: var(--faint-light);
+  --border-subtle: var(--border-light);
+  --border-strong: var(--border-strong-light);
+  --brand-primary: var(--brand-light);
+  --brand-soft: var(--brand-soft-light);
+  --brand-ink: var(--brand-ink-light);
+  --gold-accent: var(--gold-light);
+  --gold-soft: var(--gold-soft-light);
+  --mark-bg: var(--mark-bg-light);
+  --mark-ink: var(--mark-ink-light);
+
+  --sahih-bg: var(--sahih-bg-light);
+  --sahih-ink: var(--sahih-ink-light);
+  --hasan-bg: var(--hasan-bg-light);
+  --hasan-ink: var(--hasan-ink-light);
+  --daif-bg: var(--daif-bg-light);
+  --daif-ink: var(--daif-ink-light);
+  --severe-bg: var(--severe-bg-light);
+  --severe-ink: var(--severe-ink-light);
+  --mawdu-bg: var(--mawdu-bg-light);
+  --mawdu-ink: var(--mawdu-ink-light);
+  --unknown-bg: var(--unknown-bg-light);
+  --unknown-ink: var(--unknown-ink-light);
+
+  accent-color: var(--brand-primary);
+}
+
+/* Reflect meta[name="color-scheme"] override back into CSS color-scheme */
+:root:has(> head > meta[name="color-scheme"][content="dark"]) {
+  color-scheme: dark;
+}
+
+:root:has(> head > meta[name="color-scheme"][content="light"]) {
+  color-scheme: light;
+}
+
+/* Fallback dark tokens for WebViews without light-dark() support */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-canvas: var(--canvas-dark);
+    --bg-dock: var(--dock-dark);
+    --bg-surface: var(--surface-dark);
+    --bg-elevated: var(--elevated-dark);
+    --bg-subtle: var(--subtle-dark);
+    --text-primary: var(--ink-dark);
+    --text-secondary: var(--muted-dark);
+    --text-tertiary: var(--faint-dark);
+    --border-subtle: var(--border-dark);
+    --border-strong: var(--border-strong-dark);
+    --brand-primary: var(--brand-dark);
+    --brand-soft: var(--brand-soft-dark);
+    --brand-ink: var(--brand-ink-dark);
+    --gold-accent: var(--gold-dark);
+    --gold-soft: var(--gold-soft-dark);
+    --mark-bg: var(--mark-bg-dark);
+    --mark-ink: var(--mark-ink-dark);
+
+    --sahih-bg: var(--sahih-bg-dark);
+    --sahih-ink: var(--sahih-ink-dark);
+    --hasan-bg: var(--hasan-bg-dark);
+    --hasan-ink: var(--hasan-ink-dark);
+    --daif-bg: var(--daif-bg-dark);
+    --daif-ink: var(--daif-ink-dark);
+    --severe-bg: var(--severe-bg-dark);
+    --severe-ink: var(--severe-ink-dark);
+    --mawdu-bg: var(--mawdu-bg-dark);
+    --mawdu-ink: var(--mawdu-ink-dark);
+    --unknown-bg: var(--unknown-bg-dark);
+    --unknown-ink: var(--unknown-ink-dark);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg-canvas: var(--canvas-dark);
+  --bg-dock: var(--dock-dark);
+  --bg-surface: var(--surface-dark);
+  --bg-elevated: var(--elevated-dark);
+  --bg-subtle: var(--subtle-dark);
+  --text-primary: var(--ink-dark);
+  --text-secondary: var(--muted-dark);
+  --text-tertiary: var(--faint-dark);
+  --border-subtle: var(--border-dark);
+  --border-strong: var(--border-strong-dark);
+  --brand-primary: var(--brand-dark);
+  --brand-soft: var(--brand-soft-dark);
+  --brand-ink: var(--brand-ink-dark);
+  --gold-accent: var(--gold-dark);
+  --gold-soft: var(--gold-soft-dark);
+  --mark-bg: var(--mark-bg-dark);
+  --mark-ink: var(--mark-ink-dark);
+
+  --sahih-bg: var(--sahih-bg-dark);
+  --sahih-ink: var(--sahih-ink-dark);
+  --hasan-bg: var(--hasan-bg-dark);
+  --hasan-ink: var(--hasan-ink-dark);
+  --daif-bg: var(--daif-bg-dark);
+  --daif-ink: var(--daif-ink-dark);
+  --severe-bg: var(--severe-bg-dark);
+  --severe-ink: var(--severe-ink-dark);
+  --mawdu-bg: var(--mawdu-bg-dark);
+  --mawdu-ink: var(--mawdu-ink-dark);
+  --unknown-bg: var(--unknown-bg-dark);
+  --unknown-ink: var(--unknown-ink-dark);
+}
+
+/* Modern light-dark() automatic scheme resolution */
+@supports (color: light-dark(white, black)) {
+  :root {
+    --bg-canvas: light-dark(var(--canvas-light), var(--canvas-dark));
+    --bg-dock: light-dark(var(--dock-light), var(--dock-dark));
+    --bg-surface: light-dark(var(--surface-light), var(--surface-dark));
+    --bg-elevated: light-dark(var(--elevated-light), var(--elevated-dark));
+    --bg-subtle: light-dark(var(--subtle-light), var(--subtle-dark));
+    --text-primary: light-dark(var(--ink-light), var(--ink-dark));
+    --text-secondary: light-dark(var(--muted-light), var(--muted-dark));
+    --text-tertiary: light-dark(var(--faint-light), var(--faint-dark));
+    --border-subtle: light-dark(var(--border-light), var(--border-dark));
+    --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
+    --brand-primary: light-dark(var(--brand-light), var(--brand-dark));
+    --brand-soft: light-dark(var(--brand-soft-light), var(--brand-soft-dark));
+    --brand-ink: light-dark(var(--brand-ink-light), var(--brand-ink-dark));
+    --gold-accent: light-dark(var(--gold-light), var(--gold-dark));
+    --gold-soft: light-dark(var(--gold-soft-light), var(--gold-soft-dark));
+    --mark-bg: light-dark(var(--mark-bg-light), var(--mark-bg-dark));
+    --mark-ink: light-dark(var(--mark-ink-light), var(--mark-ink-dark));
+
+    --sahih-bg: light-dark(var(--sahih-bg-light), var(--sahih-bg-dark));
+    --sahih-ink: light-dark(var(--sahih-ink-light), var(--sahih-ink-dark));
+    --hasan-bg: light-dark(var(--hasan-bg-light), var(--hasan-bg-dark));
+    --hasan-ink: light-dark(var(--hasan-ink-light), var(--hasan-ink-dark));
+    --daif-bg: light-dark(var(--daif-bg-light), var(--daif-bg-dark));
+    --daif-ink: light-dark(var(--daif-ink-light), var(--daif-ink-dark));
+    --severe-bg: light-dark(var(--severe-bg-light), var(--severe-bg-dark));
+    --severe-ink: light-dark(var(--severe-ink-light), var(--severe-ink-dark));
+    --mawdu-bg: light-dark(var(--mawdu-bg-light), var(--mawdu-bg-dark));
+    --mawdu-ink: light-dark(var(--mawdu-ink-light), var(--mawdu-ink-dark));
+    --unknown-bg: light-dark(var(--unknown-bg-light), var(--unknown-bg-dark));
+    --unknown-ink: light-dark(var(--unknown-ink-light), var(--unknown-ink-dark));
+  }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+/* Eliminate Android double-tap zoom delay on interactive controls */
+button,
+summary {
+  touch-action: manipulation;
+}
+
+/* Native search clear button hidden because we render an accessible custom button */
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+/* Matched search word highlighting inside Hadith Matn */
+.hadith-mark {
+  background-color: var(--mark-bg);
+  color: var(--mark-ink);
+  border-radius: 0.3rem;
+  padding-inline: 0.16em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Frosted glass backdrop for sticky search/filter dock (no dividing border line) */
+.sticky-dock-blur {
+  background-color: var(--bg-dock);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Safe-area spacing helpers for Android 14–16 edge-to-edge screens */
+.safe-pt {
+  padding-top: max(env(safe-area-inset-top, 0px), 0.75rem);
+}
+
+.safe-pb {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
+}
+
+.safe-px {
+  padding-left: max(env(safe-area-inset-left, 0px), 1rem);
+  padding-right: max(env(safe-area-inset-right, 0px), 1rem);
+}
+
+/* Hide horizontal scrollbar on filter pill strip cleanly */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Defer off-screen rendering for cards strictly below the initial viewport (modern-web-guidance: defer-rendering-heavy-content) */
+.hadith-card-deferred {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 18rem;
+}
+
+/* Snappy GPU-composited reveal for inline panels and toast notifications */
+@keyframes panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel-reveal {
+    animation: panel-reveal 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .toast-reveal {
+    animation: toast-reveal 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Modal dialog scroll containment + smooth top-layer animation (modern-web-guidance: animate-to-from-top-layer) */
+dialog:modal {
+  overscroll-behavior: contain;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  max-width: min(28rem, calc(100vw - 2rem));
+  width: 100%;
+  max-height: min(85dvh, 40rem);
+  margin: auto;
+  padding: 0;
+  border-radius: 1rem;
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog:modal {
+    transform: scale(0.95);
+  }
+}
+
+dialog[open]:where(:not([data-closing])) {
+  opacity: 1;
+}
+
+@starting-style {
+  dialog[open]:where(:not([data-closing])) {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open]:where(:not([data-closing])) {
+    transform: scale(1);
+  }
+
+  @starting-style {
+    dialog[open]:where(:not([data-closing])) {
+      transform: scale(0.95);
+    }
+  }
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(10, 16, 14, 0);
+  backdrop-filter: blur(3px);
+  transition-property: background-color, display, overlay;
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+dialog[open]:where(:not([data-closing]))::backdrop {
+  background-color: rgba(10, 16, 14, 0.52);
+}
+
+@starting-style {
+  dialog[open]:where(:not([data-closing]))::backdrop {
+    background-color: rgba(10, 16, 14, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog:modal,
+  dialog::backdrop {
+    transition-duration: 80ms;
+  }
+}
+
+/* Native <details> disclosure for grouped duplicate scholars/sources (modern-web-guidance: accordion) */
+.other-rulings-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  user-select: none;
+}
+
+.other-rulings-summary::-webkit-details-marker {
+  display: none;
+}
+
+.other-rulings-summary::before {
+  content: '';
+  inline-size: 0.95em;
+  block-size: 0.95em;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  rotate: -90deg;
+}
+
+.other-rulings-summary:dir(rtl)::before {
+  rotate: 90deg;
+}
+
+.other-rulings[open] > .other-rulings-summary::before {
+  rotate: 0deg;
+}
+
+.other-rulings::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+
+.other-rulings:not([open])::details-content {
+  block-size: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .other-rulings-summary::before {
+    transition: rotate 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .other-rulings::details-content {
+    transition:
+      block-size 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      content-visibility 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-behavior: allow-discrete;
+  }
+}

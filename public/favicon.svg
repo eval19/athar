@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="116" fill="#0F5C4A" />
+  <rect x="28" y="28" width="456" height="456" rx="92" stroke="#D4AF62" stroke-opacity="0.28" stroke-width="4" />
+  <!-- Geometric Manuscript / Open Arch -->
+  <path
+    d="M128 176C128 158 142 144 160 144H212C236 144 256 164 256 188V356C256 340 242 328 224 328H156C140.5 328 128 315.5 128 300V176Z"
+    fill="#FAF9F6"
+  />
+  <path
+    d="M384 176C384 158 370 144 352 144H300C276 144 256 164 256 188V356C256 340 270 328 288 328H356C371.5 328 384 315.5 384 300V176Z"
+    fill="#EFECE4"
+  />
+  <!-- Spine Highlight -->
+  <path d="M256 184V356" stroke="#0F5C4A" stroke-width="8" stroke-linecap="round" />
+  <!-- Warm Gold Calligraphic Diamond Nuqtah (Athar / Trace) -->
+  <path
+    d="M256 96L284 124L256 152L228 124L256 96Z"
+    fill="#DFB968"
+  />
+  <!-- Subtle Script Lines -->
+  <path d="M164 206H222" stroke="#0F5C4A" stroke-opacity="0.32" stroke-width="10" stroke-linecap="round" />
+  <path d="M164 242H214" stroke="#0F5C4A" stroke-opacity="0.24" stroke-width="10" stroke-linecap="round" />
+  <path d="M164 278H202" stroke="#0F5C4A" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round" />
+  <path d="M290 206H348" stroke="#0F5C4A" stroke-opacity="0.32" stroke-width="10" stroke-linecap="round" />
+  <path d="M298 242H348" stroke="#0F5C4A" stroke-opacity="0.24" stroke-width="10" stroke-linecap="round" />
+  <path d="M310 278H348" stroke="#0F5C4A" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round" />
+  <!-- Bottom Ribbon Accent -->
+  <path d="M188 386H324" stroke="#DFB968" stroke-opacity="0.72" stroke-width="8" stroke-linecap="round" />
+</svg>

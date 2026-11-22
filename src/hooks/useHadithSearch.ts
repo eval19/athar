@@ -1,0 +1,251 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { FilterMode, HadithResult } from '../domain/hadith';
+import { DorarProvider } from '../services/dorarClient';
+import {
+  clearRecentSearches,
+  loadRecentSearches,
+  pushRecentSearch,
+  removeRecentSearch,
+} from '../services/preferences';
+
+const provider = new DorarProvider();
+
+export function useHadithSearch() {
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
+  const [inputValue, setInputValue] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
+  const [effectiveQuery, setEffectiveQuery] = useState('');
+  const [correctedFrom, setCorrectedFrom] = useState<string | undefined>(undefined);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [filter, setFilter] = useState<FilterMode>('all');
+
+  const [items, setItems] = useState<HadithResult[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const requestSeqRef = useRef(0);
+  const filterRef = useRef<FilterMode>(filter);
+  const inputRef = useRef(inputValue);
+  const skipNextDebounceRef = useRef(false);
+
+  filterRef.current = filter;
+  inputRef.current = inputValue;
+
+  const resetResults = useCallback(() => {
+    abortRef.current?.abort();
+    setActiveQuery('');
+    setEffectiveQuery('');
+    setCorrectedFrom(undefined);
+    setSuggestions([]);
+    setItems([]);
+    setHasMore(false);
+    setHasError(false);
+    setIsLoading(false);
+    setIsLoadingMore(false);
+  }, []);
+
+  const executeSearch = useCallback(
+    async (
+      queryText: string,
+      filterMode: FilterMode,
+      pageNum: number,
+      options: { append?: boolean; forceExact?: boolean } = {},
+    ) => {
+      const trimmed = queryText.trim();
+      if (trimmed.length < 2) {
+        resetResults();
+        return;
+      }
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const seq = ++requestSeqRef.current;
+
+      setHasError(false);
+      if (options.append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+        setActiveQuery(trimmed);
+      }
+
+      try {
+        const res = await provider.search({
+          query: trimmed,
+          filter: filterMode,
+          page: pageNum,
+          forceExact: options.forceExact,
+          signal: controller.signal,
+        });
+
+        if (seq !== requestSeqRef.current) return;
+
+        if (options.append) {
+          setItems((prev) => {
+            const seen = new Set(prev.map((item) => item.id));
+            return [...prev, ...res.items.filter((item) => !seen.has(item.id))];
+          });
+        } else {
+          setItems(res.items);
+          setEffectiveQuery(res.effectiveQuery);
+          setCorrectedFrom(res.correctedFrom);
+          setSuggestions(res.suggestions);
+          if (res.items.length > 0) {
+            setRecentSearches((prev) => pushRecentSearch(prev, res.effectiveQuery));
+          }
+        }
+
+        setPage(res.page);
+        setHasMore(res.hasMore);
+      } catch (err) {
+        if (controller.signal.aborted || seq !== requestSeqRef.current) return;
+        console.error('Search error:', err);
+        if (!options.append) {
+          setItems([]);
+          setHasMore(false);
+        }
+        setHasError(true);
+      } finally {
+        if (seq === requestSeqRef.current) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
+      }
+    },
+    [resetResults],
+  );
+
+  // Debounced live search strictly for typing (320ms); filter tabs & explicit clicks execute at 0ms
+  useEffect(() => {
+    const trimmed = inputValue.trim();
+    if (trimmed.length === 0) {
+      resetResults();
+      return;
+    }
+    if (trimmed.length < 2) return;
+
+    if (skipNextDebounceRef.current) {
+      skipNextDebounceRef.current = false;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void executeSearch(trimmed, filterRef.current, 1);
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [inputValue, executeSearch, resetResults]);
+
+  const handleSetFilter = useCallback(
+    (nextFilter: FilterMode) => {
+      if (nextFilter === filterRef.current) return;
+      filterRef.current = nextFilter;
+      setFilter(nextFilter);
+      const trimmed = inputRef.current.trim();
+      if (trimmed.length >= 2) {
+        void executeSearch(trimmed, nextFilter, 1);
+      }
+    },
+    [executeSearch],
+  );
+
+  const submitSearch = useCallback(
+    (value: string) => {
+      void executeSearch(value, filterRef.current, 1);
+    },
+    [executeSearch],
+  );
+
+  const selectQuery = useCallback(
+    (query: string) => {
+      if (query !== inputRef.current) {
+        skipNextDebounceRef.current = true;
+      }
+      setInputValue(query);
+      void executeSearch(query, filterRef.current, 1);
+    },
+    [executeSearch],
+  );
+
+  const searchExact = useCallback(
+    (original: string) => {
+      if (original !== inputRef.current) {
+        skipNextDebounceRef.current = true;
+      }
+      setInputValue(original);
+      void executeSearch(original, filterRef.current, 1, { forceExact: true });
+    },
+    [executeSearch],
+  );
+
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore || !effectiveQuery) return;
+    void executeSearch(effectiveQuery, filterRef.current, page + 1, {
+      append: true,
+      forceExact: true,
+    });
+  }, [isLoadingMore, hasMore, effectiveQuery, executeSearch, page]);
+
+  const removeRecent = useCallback((term: string) => {
+    setRecentSearches((prev) => removeRecentSearch(prev, term));
+  }, []);
+
+  const clearRecent = useCallback(() => {
+    setRecentSearches(clearRecentSearches());
+  }, []);
+
+  const resetHome = useCallback(() => {
+    setInputValue('');
+    setFilter('all');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const fetchOsoul = useCallback(
+    (dorarId: string) => provider.fetchOsoul(dorarId),
+    [],
+  );
+
+  const fetchAltSahih = useCallback(
+    (dorarId: string) => provider.fetchAltSahih(dorarId),
+    [],
+  );
+
+  const fetchSimilar = useCallback(
+    (dorarId: string) => provider.fetchSimilar(dorarId),
+    [],
+  );
+
+  return {
+    inputValue,
+    setInputValue,
+    activeQuery,
+    effectiveQuery,
+    correctedFrom,
+    suggestions,
+    filter,
+    setFilter: handleSetFilter,
+    items,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    hasError,
+    recentSearches,
+    hasSearched: activeQuery.length >= 2,
+    submitSearch,
+    selectQuery,
+    searchExact,
+    loadMore,
+    retry: () => void executeSearch(inputValue, filter, 1),
+    removeRecent,
+    clearRecent,
+    resetHome,
+    fetchOsoul,
+    fetchAltSahih,
+    fetchSimilar,
+  };
+}

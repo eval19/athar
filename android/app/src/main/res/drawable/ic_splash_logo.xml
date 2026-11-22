@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rounded emerald badge inside Android 12+ splash safe circle (diameter 66dp) -->
+    <path
+        android:fillColor="#0F5C4A"
+        android:pathData="M34,24 L74,24 C79.5,24 84,28.5 84,34 L84,74 C84,79.5 79.5,84 74,84 L34,84 C28.5,84 24,79.5 24,74 L24,34 C24,28.5 28.5,24 34,24 Z" />
+    <path
+        android:fillColor="#FAF9F6"
+        android:pathData="M35.5,44 C35.5,42 37,40.5 39,40.5 L47,40.5 C50.8,40.5 54,43.7 54,47.5 L54,68.5 C54,66.2 52,64.4 49.6,64.4 L38.8,64.4 C37,64.4 35.5,62.9 35.5,61 Z" />
+    <path
+        android:fillColor="#EBE7DD"
+        android:pathData="M72.5,44 C72.5,42 71,40.5 69,40.5 L61,40.5 C57.2,40.5 54,43.7 54,47.5 L54,68.5 C54,66.2 56,64.4 58.4,64.4 L69.2,64.4 C71,64.4 72.5,62.9 72.5,61 Z" />
+    <path
+        android:strokeColor="#0F5C4A"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:pathData="M54,47 L54,68.5" />
+    <path
+        android:fillColor="#DFB968"
+        android:pathData="M54,32 L58.5,36.5 L54,41 L49.5,36.5 Z" />
+    <path
+        android:strokeColor="#DFB968"
+        android:strokeAlpha="0.88"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M44.5,73 L63.5,73" />
+</vector>
