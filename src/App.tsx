@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import {
   markGradeHintDiscovered,
   recordGradeHintShown,
@@ -196,10 +196,10 @@ export default function App() {
         {search.correctedFrom && !search.isLoading && search.items.length > 0 && (
           <div
             role="status"
-            className="mb-3.5 rounded-xl border border-brand bg-brand-soft px-4 py-3 text-xs text-ink"
+            className="mb-3.5 rounded-2xl bg-brand-soft px-4 py-3 text-xs text-ink"
           >
             <div className="flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
               <div className="min-w-0 flex-1 space-y-2">
                 <p className="font-medium leading-relaxed">
                   {strings.correctedBanner(search.effectiveQuery, search.correctedFrom)}
@@ -208,7 +208,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => search.searchExact(search.correctedFrom!)}
-                    className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium text-muted hover:text-ink"
+                    className="hadith-sheet rounded-full bg-surface px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-ink"
                   >
                     {strings.searchExactInstead(search.correctedFrom)}
                   </button>
@@ -219,7 +219,7 @@ export default function App() {
                       dir="rtl"
                       lang="ar"
                       onClick={() => search.selectQuery(alt)}
-                      className="rounded-lg border border-brand bg-surface px-2.5 py-1 text-xs font-semibold text-brand"
+                      className="hadith-sheet rounded-full bg-surface px-3 py-1 text-xs font-semibold text-brand transition-opacity hover:opacity-90"
                     >
                       {alt}
                     </button>
@@ -257,7 +257,7 @@ export default function App() {
         {!search.isLoading && !search.hasError && groupedItems.length > 0 && (
           <section aria-label={strings.resultsCount(groupedItems.length, search.hasMore)}>
             <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-xs font-medium text-faint">
+              <p className="text-xs font-medium tabular-nums text-faint">
                 {strings.resultsCount(groupedItems.length, search.hasMore)}
               </p>
               <p className="text-[0.7rem] text-faint" dir="rtl" lang="ar">
@@ -265,7 +265,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {groupedItems.map((group, idx) => (
                 <HadithCard
                   key={group.primary.id}
@@ -293,7 +293,7 @@ export default function App() {
                   type="button"
                   onClick={search.loadMore}
                   disabled={search.isLoadingMore}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60"
+                  className="hadith-sheet inline-flex h-11 items-center justify-center gap-2 rounded-full bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60"
                 >
                   {search.isLoadingMore && (
                     <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />

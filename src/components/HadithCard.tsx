@@ -8,7 +8,7 @@ import {
   Layers,
   Loader2,
   Share2,
-  Sparkles,
+  ShieldCheck,
   User,
   X,
 } from 'lucide-react';
@@ -166,7 +166,7 @@ export const HadithCard = memo(function HadithCard({
 
   return (
     <article
-      className={`rounded-2xl border border-line bg-surface p-4 sm:p-5 transition-colors${
+      className={`hadith-sheet rounded-2xl bg-surface px-4 py-4 transition-colors sm:px-5 sm:py-5${
         deferred ? ' hadith-card-deferred' : ''
       }`}
     >
@@ -206,7 +206,7 @@ export const HadithCard = memo(function HadithCard({
               onClick={handleOpenGradeFromHint}
               className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-start font-medium text-ink transition-opacity active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
+              <BookOpen className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
               <span className="leading-snug">{strings.gradeHintPrompt}</span>
             </button>
             <button
@@ -225,7 +225,7 @@ export const HadithCard = memo(function HadithCard({
       {showGradeHelp && (
         <div
           role="note"
-          className="panel-reveal mb-3 rounded-xl border border-line bg-canvas px-3.5 py-3 text-xs"
+          className="panel-reveal mb-4 rounded-xl bg-elevated px-3.5 py-3 text-xs"
         >
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <span className="font-semibold text-ink">
@@ -235,24 +235,34 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={() => setShowGradeHelp(false)}
               aria-label={strings.close}
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-elevated hover:text-ink"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-subtle hover:text-ink"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
 
           {gradeDef.quote && (
-            <blockquote className="mb-2 border-s-2 border-brand ps-2.5">
-              <p className="leading-relaxed text-ink">«{gradeDef.quote}»</p>
+            <blockquote className="mb-2.5">
+              <p className="font-hadith text-[0.98rem] leading-[1.85] text-ink">
+                «{gradeDef.quote}»
+              </p>
               {gradeDef.source && (
-                <footer className="mt-1 text-[0.7rem] font-medium text-brand">
+                <footer className="mt-1 text-[0.72rem] font-medium text-brand">
                   — {gradeDef.source}
                 </footer>
               )}
             </blockquote>
           )}
 
-          <p className="leading-relaxed text-muted">{gradeDef.summary}</p>
+          <p
+            className={
+              gradeDef.quote
+                ? 'border-t border-line pt-2 leading-relaxed text-muted'
+                : 'leading-relaxed text-muted'
+            }
+          >
+            {gradeDef.summary}
+          </p>
         </div>
       )}
 
@@ -260,7 +270,7 @@ export const HadithCard = memo(function HadithCard({
       <p
         dir="rtl"
         lang="ar"
-        className={`font-hadith text-start text-ink ${MATN_SIZE_CLASS[readingScale]}`}
+        className={`font-hadith py-0.5 text-start text-ink ${MATN_SIZE_CLASS[readingScale]}`}
       >
         {segments.map((seg, idx) =>
           seg.match ? (
@@ -301,7 +311,7 @@ export const HadithCard = memo(function HadithCard({
             {hadith.source && (
               <span className="inline-flex items-center gap-1 font-medium text-ink">
                 <BookOpen className="h-3.5 w-3.5 shrink-0 text-faint" aria-hidden="true" />
-                <span dir="rtl" lang="ar">
+                <span dir="rtl" lang="ar" className="tabular-nums">
                   {hadith.source}
                   {hadith.pageOrNumber ? ` (${hadith.pageOrNumber})` : ''}
                 </span>
@@ -319,12 +329,12 @@ export const HadithCard = memo(function HadithCard({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
               onClick={handleCopy}
               aria-label={justCopied ? strings.copied : strings.copy}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {justCopied ? (
                 <Check className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
@@ -338,7 +348,7 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={() => void onShare(hadith)}
               aria-label={strings.share}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
               <span>{strings.share}</span>
@@ -350,7 +360,7 @@ export const HadithCard = memo(function HadithCard({
         {hadith.takhrij && (
           <p className="mt-2 text-xs leading-relaxed text-muted">
             <span className="font-semibold text-ink">{strings.takhrijLabel}: </span>
-            <span dir="rtl" lang="ar">
+            <span dir="rtl" lang="ar" className="tabular-nums">
               {hadith.takhrij}
             </span>
           </p>
@@ -369,13 +379,11 @@ export const HadithCard = memo(function HadithCard({
                     ? undefined
                     : { backgroundColor: 'var(--sahih-bg)', color: 'var(--sahih-ink)' }
                 }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                  activePanel === 'alt'
-                    ? 'border-brand bg-brand text-brand-ink'
-                    : 'border-line'
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  activePanel === 'alt' ? 'bg-brand text-brand-ink' : ''
                 }`}
               >
-                <Sparkles className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>{strings.altSahihButton}</span>
                 {activePanel === 'alt' && (
                   <ChevronUp className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -388,10 +396,10 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 aria-expanded={activePanel === 'osoul'}
                 onClick={() => togglePanel('osoul')}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   activePanel === 'osoul'
-                    ? 'border-ink bg-ink text-canvas'
-                    : 'border-line bg-canvas text-muted hover:text-ink'
+                    ? 'bg-ink text-canvas'
+                    : 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
                 }`}
               >
                 <GitBranch className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -407,10 +415,10 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 aria-expanded={activePanel === 'similar'}
                 onClick={() => togglePanel('similar')}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   activePanel === 'similar'
-                    ? 'border-ink bg-ink text-canvas'
-                    : 'border-line bg-canvas text-muted hover:text-ink'
+                    ? 'bg-ink text-canvas'
+                    : 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
                 }`}
               >
                 <Layers className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -425,11 +433,7 @@ export const HadithCard = memo(function HadithCard({
 
         {/* Single active expandable scholarly panel */}
         {activePanel && (
-          <div
-            className={`panel-reveal mt-2.5 rounded-xl border bg-canvas p-3 text-xs ${
-              activePanel === 'alt' ? 'border-brand' : 'border-line'
-            }`}
-          >
+          <div className="panel-reveal mt-3 rounded-xl bg-elevated px-3.5 py-3 text-xs">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span
                 className={`font-semibold ${
@@ -446,7 +450,7 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 onClick={() => setActivePanel(null)}
                 aria-label={strings.close}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-elevated hover:text-ink"
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-subtle hover:text-ink"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -465,7 +469,7 @@ export const HadithCard = memo(function HadithCard({
                 <button
                   type="button"
                   onClick={() => void loadPanel(activePanel)}
-                  className="rounded-lg border border-line bg-surface px-2.5 py-1 font-semibold text-brand"
+                  className="hadith-sheet rounded-full bg-surface px-3 py-1 font-semibold text-brand"
                 >
                   {strings.retry}
                 </button>
@@ -474,17 +478,17 @@ export const HadithCard = memo(function HadithCard({
 
             {!panelLoading && !panelError && activePanel === 'osoul' && (
               osoulData && osoulData.length > 0 ? (
-                <ul className="space-y-2.5">
+                <ul className="divide-y divide-line">
                   {osoulData.map((entry, idx) => (
                     <li
                       key={`${entry.sourceRef}-${idx}`}
-                      className="rounded-lg border border-line bg-surface p-2.5"
+                      className="py-3 first:pt-1 last:pb-0"
                     >
                       {entry.sourceRef && (
                         <p
                           dir="rtl"
                           lang="ar"
-                          className="mb-1 text-start text-[0.72rem] font-semibold text-brand"
+                          className="mb-1 text-start text-[0.72rem] font-semibold tabular-nums text-brand"
                         >
                           {entry.sourceRef}
                         </p>
@@ -521,12 +525,9 @@ export const HadithCard = memo(function HadithCard({
                 return <p className="py-1 text-muted">{strings.panelEmpty}</p>;
               }
               return (
-                <ul className="space-y-2.5">
+                <ul className="divide-y divide-line">
                   {list.slice(0, 6).map((item) => (
-                    <li
-                      key={item.id}
-                      className="rounded-lg border border-line bg-surface p-2.5"
-                    >
+                    <li key={item.id} className="py-3 first:pt-1 last:pb-0">
                       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5">
                         <GradeBadge bucket={item.gradeBucket} strings={strings} size="sm" />
                         {item.narrator && (
@@ -571,7 +572,7 @@ export const HadithCard = memo(function HadithCard({
                       {item.source && (
                         <p className="mt-1 inline-flex items-center gap-1 text-[0.7rem] text-muted">
                           <BookOpen className="h-3 w-3 shrink-0 text-faint" aria-hidden="true" />
-                          <span dir="rtl" lang="ar">
+                          <span dir="rtl" lang="ar" className="tabular-nums">
                             {item.source}
                             {item.pageOrNumber ? ` (${item.pageOrNumber})` : ''}
                           </span>
@@ -589,7 +590,7 @@ export const HadithCard = memo(function HadithCard({
         {others.length > 0 && (
           <details className="other-rulings mt-3 border-t border-line pt-2.5">
             <summary className="other-rulings-summary text-xs font-semibold text-brand">
-              <span>{strings.otherRulingsLabel(others.length)}</span>
+              <span className="tabular-nums">{strings.otherRulingsLabel(others.length)}</span>
               {otherBucketCounts.length > 0 && (
                 <span className="ms-auto flex flex-wrap items-center gap-1">
                   {otherBucketCounts.slice(0, 3).map(({ bucket, count }) => (
@@ -604,12 +605,9 @@ export const HadithCard = memo(function HadithCard({
                 </span>
               )}
             </summary>
-            <ul className="mt-2.5 space-y-2">
+            <ul className="mt-2.5 divide-y divide-line rounded-xl bg-elevated px-3.5 py-1 text-xs">
               {others.map((alt) => (
-                <li
-                  key={alt.id}
-                  className="rounded-xl border border-line bg-canvas px-3 py-2.5 text-xs"
-                >
+                <li key={alt.id} className="py-2.5">
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5">
                     <GradeBadge bucket={alt.gradeBucket} strings={strings} size="sm" />
                     {alt.narrator && (
@@ -649,7 +647,7 @@ export const HadithCard = memo(function HadithCard({
                       {alt.source && (
                         <span className="inline-flex items-center gap-1">
                           <BookOpen className="h-3 w-3 shrink-0 text-faint" aria-hidden="true" />
-                          <span dir="rtl" lang="ar">
+                          <span dir="rtl" lang="ar" className="tabular-nums">
                             {alt.source}
                             {alt.pageOrNumber ? ` (${alt.pageOrNumber})` : ''}
                           </span>

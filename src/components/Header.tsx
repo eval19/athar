@@ -25,19 +25,19 @@ export function Header({
         >
           <AtharLogo className="h-9 w-9 shrink-0 transition-transform duration-150 group-active:scale-95" />
           <div className="min-w-0">
-            <h1 className="text-lg font-bold leading-tight tracking-tight text-ink">
+            <h1 className="font-hadith text-[1.45rem] font-bold leading-none text-ink">
               {strings.appName}
             </h1>
-            <p className="truncate text-xs text-muted">{strings.appSubtitle}</p>
+            <p className="mt-0.5 truncate text-xs text-muted">{strings.appSubtitle}</p>
           </div>
         </button>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={onToggleLocale}
             aria-label={strings.switchLangLabel}
-            className="inline-flex h-9 min-w-[2.5rem] items-center justify-center rounded-xl border border-line bg-surface px-2.5 text-xs font-semibold text-ink transition-colors hover:bg-elevated active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="inline-flex h-11 min-w-[2.75rem] items-center justify-center rounded-full px-2.5 text-xs font-semibold text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 active:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             {strings.switchLangShort}
           </button>
@@ -46,9 +46,9 @@ export function Header({
             type="button"
             onClick={onOpenSettings}
             aria-label={strings.settingsButtonLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 active:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            <SlidersHorizontal className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
           </button>
         </div>
       </div>

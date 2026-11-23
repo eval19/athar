@@ -2,10 +2,10 @@ import {
   AlertCircle,
   AlertTriangle,
   Ban,
+  Check,
   CheckCircle2,
   ChevronDown,
   Info,
-  Sparkles,
 } from 'lucide-react';
 import type { GradeBucket } from '../domain/hadith';
 import type { AppStrings } from '../i18n/strings';
@@ -58,7 +58,7 @@ export function GradeBadge({
         <CheckCircle2 className={iconClass} aria-hidden="true" />
       )}
       {(bucket === 'hasan' || bucket === 'hasan_isnad') && (
-        <Sparkles className={iconClass} aria-hidden="true" />
+        <Check className={iconClass} aria-hidden="true" />
       )}
       {(bucket === 'daif' || bucket === 'daif_isnad') && (
         <AlertTriangle className={iconClass} aria-hidden="true" />
@@ -70,7 +70,7 @@ export function GradeBadge({
         <Ban className={iconClass} aria-hidden="true" />
       )}
       {bucket === 'unknown' && <Info className={iconClass} aria-hidden="true" />}
-      <span>{displayLabel}</span>
+      <span className="tabular-nums">{displayLabel}</span>
     </>
   );
 

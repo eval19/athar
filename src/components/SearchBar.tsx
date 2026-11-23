@@ -37,7 +37,7 @@ export function SearchBar({
       <form
         onSubmit={handleSubmit}
         role="search"
-        className="flex items-center gap-2 rounded-2xl border border-line-strong bg-surface p-1.5 transition-colors focus-within:border-brand"
+        className="search-bar-shell flex items-center gap-2 rounded-2xl bg-surface p-1.5"
       >
         <div className="flex h-10 w-9 shrink-0 items-center justify-center text-muted">
           {isLoading ? (

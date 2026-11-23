@@ -196,7 +196,7 @@ export function InfoDialog({
                     className={
                       active
                         ? 'rounded-xl border border-brand bg-brand-soft px-3 py-2 text-sm font-semibold text-brand transition-colors'
-                        : 'rounded-xl border border-line bg-canvas px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-ink'
+                        : 'rounded-xl border border-transparent bg-elevated px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
                     }
                   >
                     {lang === 'ar' ? 'العربية' : 'English'}
@@ -223,7 +223,7 @@ export function InfoDialog({
                     className={
                       active
                         ? 'flex items-center gap-2.5 rounded-xl border border-brand bg-brand-soft px-3.5 py-2.5 text-start text-sm font-semibold text-brand transition-colors'
-                        : 'flex items-center gap-2.5 rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-start text-sm font-medium text-muted transition-colors hover:text-ink'
+                        : 'flex items-center gap-2.5 rounded-xl border border-transparent bg-elevated px-3.5 py-2.5 text-start text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
                     }
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -251,7 +251,7 @@ export function InfoDialog({
                     className={
                       active
                         ? 'rounded-xl border border-brand bg-brand-soft px-3 py-2 text-xs font-semibold text-brand transition-colors'
-                        : 'rounded-xl border border-line bg-canvas px-3 py-2 text-xs font-medium text-muted transition-colors hover:text-ink'
+                        : 'rounded-xl border border-transparent bg-elevated px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
                     }
                   >
                     {strings.readingSizes[scale]}
@@ -262,14 +262,14 @@ export function InfoDialog({
           </section>
 
           {/* Source & Attribution */}
-          <section className="rounded-xl border border-line bg-canvas p-3.5">
+          <section className="border-t border-line pt-4">
             <h3 className="mb-1 text-xs font-semibold text-ink">
               {strings.aboutSection}
             </h3>
             <p className="text-xs leading-relaxed text-muted">
               {strings.aboutCredit}
             </p>
-            <p className="mt-2 text-[0.7rem] font-medium text-faint">
+            <p className="mt-2 text-[0.7rem] font-medium tabular-nums text-faint">
               {strings.appName} • {strings.aboutVersion}
             </p>
           </section>

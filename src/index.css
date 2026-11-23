@@ -5,87 +5,95 @@
 :root {
   color-scheme: light dark;
 
-  /* Raw palette tokens */
-  --canvas-light: #faf9f6;
-  --canvas-dark: #0e1312;
+  /* Raw palette tokens — Warm Archival Parchment (Light) & Warm Obsidian Ink (Dark) */
+  --canvas-light: #f6f3ec;
+  --canvas-dark: #121312;
 
-  --dock-light: rgba(250, 249, 246, 0.76);
-  --dock-dark: rgba(14, 19, 18, 0.72);
+  --dock-light: rgba(246, 243, 236, 0.88);
+  --dock-dark: rgba(18, 19, 18, 0.86);
 
-  --surface-light: #ffffff;
-  --surface-dark: #151c1a;
+  --surface-light: #fffdf9;
+  --surface-dark: #1a1b1a;
 
-  --elevated-light: #f4f1ea;
-  --elevated-dark: #1b2522;
+  --elevated-light: #efeae0;
+  --elevated-dark: #222422;
 
-  --subtle-light: #efece4;
-  --subtle-dark: #202c28;
+  --subtle-light: #e7e1d5;
+  --subtle-dark: #2a2c29;
 
-  --ink-light: #18201e;
-  --ink-dark: #f2f4f2;
+  --ink-light: #1b1d1b;
+  --ink-dark: #f1eee7;
 
-  --muted-light: #52605c;
-  --muted-dark: #a6b4af;
+  --muted-light: #575852;
+  --muted-dark: #b0ada5;
 
-  --faint-light: #768480;
-  --faint-dark: #7d8d88;
+  --faint-light: #6e6e67;
+  --faint-dark: #8c8a82;
 
-  --border-light: #e5e1d8;
-  --border-dark: #24322e;
+  --border-light: rgba(27, 29, 27, 0.09);
+  --border-dark: rgba(241, 238, 231, 0.08);
 
-  --border-strong-light: #d2ccc0;
-  --border-strong-dark: #334640;
+  --border-strong-light: rgba(27, 29, 27, 0.17);
+  --border-strong-dark: rgba(241, 238, 231, 0.17);
 
-  --brand-light: #0f5c4a;
-  --brand-dark: #34a88b;
+  --brand-light: #0e5a47;
+  --brand-dark: #3db293;
 
-  --brand-soft-light: #e6f2ee;
-  --brand-soft-dark: #14322a;
+  --brand-soft-light: #e5f1ec;
+  --brand-soft-dark: #172b25;
 
-  --brand-ink-light: #ffffff;
-  --brand-ink-dark: #061813;
+  --brand-ink-light: #fffdf9;
+  --brand-ink-dark: #091713;
 
-  --gold-light: #b88a32;
-  --gold-dark: #dfb968;
+  --gold-light: #9a7228;
+  --gold-dark: #dec07a;
 
-  --gold-soft-light: #fef4d6;
-  --gold-soft-dark: #362c14;
+  --gold-soft-light: #fbf2da;
+  --gold-soft-dark: #2e2616;
 
-  --mark-bg-light: #fdeeb8;
-  --mark-bg-dark: #473812;
-  --mark-ink-light: #151a19;
-  --mark-ink-dark: #fef5d7;
+  --mark-bg-light: rgba(226, 181, 78, 0.26);
+  --mark-bg-dark: rgba(222, 192, 122, 0.19);
+  --mark-underline-light: rgba(168, 118, 26, 0.42);
+  --mark-underline-dark: rgba(222, 192, 122, 0.48);
+  --mark-ink-light: #1b1d1b;
+  --mark-ink-dark: #fbf4e2;
+
+  --selection-bg-light: rgba(14, 90, 71, 0.18);
+  --selection-bg-dark: rgba(61, 178, 147, 0.24);
+
+  --sheet-shadow-light: 0 1px 2px rgba(27, 24, 18, 0.045), 0 0 0 1px rgba(27, 24, 18, 0.06);
+  --sheet-shadow-dark: 0 1px 2px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(241, 238, 231, 0.07);
 
   /* Grade badge tokens (severity ladder: Sahih -> Hasan -> Daif -> Very Weak/Munkar -> Mawdu/Batil -> Detailed) */
-  --sahih-bg-light: #e7f5ef;
-  --sahih-bg-dark: #123328;
-  --sahih-ink-light: #0c5942;
-  --sahih-ink-dark: #6ee7b7;
+  --sahih-bg-light: #e5f3ec;
+  --sahih-bg-dark: #162e25;
+  --sahih-ink-light: #0b5640;
+  --sahih-ink-dark: #7ae4b9;
 
-  --hasan-bg-light: #e8f2f8;
-  --hasan-bg-dark: #142c3b;
-  --hasan-ink-light: #145374;
-  --hasan-ink-dark: #7dd3fc;
+  --hasan-bg-light: #e6f0f7;
+  --hasan-bg-dark: #162835;
+  --hasan-ink-light: #134e6e;
+  --hasan-ink-dark: #84d2fa;
 
-  --daif-bg-light: #fef3e2;
-  --daif-bg-dark: #342613;
-  --daif-ink-light: #935308;
-  --daif-ink-dark: #fbbf24;
+  --daif-bg-light: #fbf0dd;
+  --daif-bg-dark: #302414;
+  --daif-ink-light: #8c4e08;
+  --daif-ink-dark: #f8be4b;
 
-  --severe-bg-light: #fdece8;
-  --severe-bg-dark: #3b1e16;
-  --severe-ink-light: #a6341b;
-  --severe-ink-dark: #fda48a;
+  --severe-bg-light: #fbeae5;
+  --severe-bg-dark: #351d17;
+  --severe-ink-light: #9e3118;
+  --severe-ink-dark: #fca48b;
 
-  --mawdu-bg-light: #fbe6e9;
-  --mawdu-bg-dark: #3d141c;
-  --mawdu-ink-light: #93162a;
-  --mawdu-ink-dark: #fda4af;
+  --mawdu-bg-light: #fae4e7;
+  --mawdu-bg-dark: #37161d;
+  --mawdu-ink-light: #8e172a;
+  --mawdu-ink-dark: #fca4b0;
 
-  --unknown-bg-light: #eeece6;
-  --unknown-bg-dark: #252c2a;
-  --unknown-ink-light: #4e5955;
-  --unknown-ink-dark: #cbd5d1;
+  --unknown-bg-light: #edeae2;
+  --unknown-bg-dark: #262725;
+  --unknown-ink-light: #4e4e48;
+  --unknown-ink-dark: #cbc8bf;
 
   /* Default (light) semantic tokens — fallback for older WebViews */
   --bg-canvas: var(--canvas-light);
@@ -104,7 +112,10 @@
   --gold-accent: var(--gold-light);
   --gold-soft: var(--gold-soft-light);
   --mark-bg: var(--mark-bg-light);
+  --mark-underline: var(--mark-underline-light);
   --mark-ink: var(--mark-ink-light);
+  --selection-bg: var(--selection-bg-light);
+  --sheet-shadow: var(--sheet-shadow-light);
 
   --sahih-bg: var(--sahih-bg-light);
   --sahih-ink: var(--sahih-ink-light);
@@ -120,6 +131,7 @@
   --unknown-ink: var(--unknown-ink-light);
 
   accent-color: var(--brand-primary);
+  caret-color: var(--brand-primary);
 }
 
 /* Reflect meta[name="color-scheme"] override back into CSS color-scheme */
@@ -150,7 +162,10 @@
     --gold-accent: var(--gold-dark);
     --gold-soft: var(--gold-soft-dark);
     --mark-bg: var(--mark-bg-dark);
+    --mark-underline: var(--mark-underline-dark);
     --mark-ink: var(--mark-ink-dark);
+    --selection-bg: var(--selection-bg-dark);
+    --sheet-shadow: var(--sheet-shadow-dark);
 
     --sahih-bg: var(--sahih-bg-dark);
     --sahih-ink: var(--sahih-ink-dark);
@@ -184,7 +199,10 @@
   --gold-accent: var(--gold-dark);
   --gold-soft: var(--gold-soft-dark);
   --mark-bg: var(--mark-bg-dark);
+  --mark-underline: var(--mark-underline-dark);
   --mark-ink: var(--mark-ink-dark);
+  --selection-bg: var(--selection-bg-dark);
+  --sheet-shadow: var(--sheet-shadow-dark);
 
   --sahih-bg: var(--sahih-bg-dark);
   --sahih-ink: var(--sahih-ink-dark);
@@ -219,7 +237,9 @@
     --gold-accent: light-dark(var(--gold-light), var(--gold-dark));
     --gold-soft: light-dark(var(--gold-soft-light), var(--gold-soft-dark));
     --mark-bg: light-dark(var(--mark-bg-light), var(--mark-bg-dark));
+    --mark-underline: light-dark(var(--mark-underline-light), var(--mark-underline-dark));
     --mark-ink: light-dark(var(--mark-ink-light), var(--mark-ink-dark));
+    --selection-bg: light-dark(var(--selection-bg-light), var(--selection-bg-dark));
 
     --sahih-bg: light-dark(var(--sahih-bg-light), var(--sahih-bg-dark));
     --sahih-ink: light-dark(var(--sahih-ink-light), var(--sahih-ink-dark));
@@ -246,6 +266,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--text-primary);
 }
 
 /* Eliminate Android double-tap zoom delay on interactive controls */
@@ -262,12 +289,29 @@ input[type='search']::-webkit-search-results-decoration {
   -webkit-appearance: none;
 }
 
-/* Matched search word highlighting inside Hadith Matn */
+/* Whisper-soft reading sheet elevation (hairline + subtle offset lift instead of harsh flat borders) */
+.hadith-sheet {
+  box-shadow: var(--sheet-shadow);
+}
+
+.search-bar-shell {
+  box-shadow: var(--sheet-shadow);
+  transition: box-shadow 160ms ease-out;
+}
+
+.search-bar-shell:focus-within {
+  box-shadow:
+    0 2px 8px rgba(14, 90, 71, 0.08),
+    0 0 0 1.5px var(--brand-primary);
+}
+
+/* Matched search word highlighting inside Hadith Matn — delicate highlighter stroke */
 .hadith-mark {
   background-color: var(--mark-bg);
   color: var(--mark-ink);
-  border-radius: 0.3rem;
-  padding-inline: 0.16em;
+  border-radius: 0.25rem;
+  padding-inline: 0.14em;
+  box-shadow: inset 0 -2px 0 var(--mark-underline);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -405,6 +449,7 @@ dialog:modal {
   background-color: var(--bg-surface);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
   max-width: min(28rem, calc(100vw - 2rem));
   width: 100%;
   max-height: min(85dvh, 40rem);

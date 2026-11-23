@@ -2,8 +2,8 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { EdgeToEdge } from '@capawesome/capacitor-android-edge-to-edge-support';
 
-const LIGHT_CHROME_BG = '#FAF9F6';
-const DARK_CHROME_BG = '#0E1312';
+const LIGHT_CHROME_BG = '#F6F3EC';
+const DARK_CHROME_BG = '#121312';
 
 export async function syncNativeSystemBars(resolvedScheme: 'light' | 'dark'): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
