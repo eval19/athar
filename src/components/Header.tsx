@@ -1,8 +1,10 @@
 import { SlidersHorizontal } from 'lucide-react';
+import type { Locale } from '../domain/hadith';
 import type { AppStrings } from '../i18n/strings';
 import { AtharLogo } from './AtharLogo';
 
 interface HeaderProps {
+  locale: Locale;
   strings: AppStrings;
   onToggleLocale: () => void;
   onOpenSettings: () => void;
@@ -10,6 +12,7 @@ interface HeaderProps {
 }
 
 export function Header({
+  locale,
   strings,
   onToggleLocale,
   onOpenSettings,
@@ -21,15 +24,33 @@ export function Header({
         <button
           type="button"
           onClick={onResetHome}
-          className="group flex items-center gap-3 rounded-xl text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="group flex min-w-0 items-center gap-3 rounded-xl text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <AtharLogo className="h-9 w-9 shrink-0 transition-transform duration-150 group-active:scale-95" />
-          <div className="min-w-0">
-            <h1 className="font-hadith text-[1.45rem] font-bold leading-none text-ink">
-              {strings.appName}
-            </h1>
-            <p className="mt-0.5 truncate text-xs text-muted">{strings.appSubtitle}</p>
-          </div>
+          {locale === 'ar' ? (
+            <>
+              <h1 className="flex shrink-0 items-center">
+                <AtharLogo
+                  variant="mark"
+                  className="h-9 w-auto text-ink transition-transform duration-150 group-active:scale-95"
+                />
+                <span className="sr-only">{strings.appName}</span>
+              </h1>
+              <p className="truncate text-xs text-muted">{strings.appSubtitle}</p>
+            </>
+          ) : (
+            <>
+              <AtharLogo
+                variant="mark"
+                className="h-8 w-auto shrink-0 text-ink transition-transform duration-150 group-active:scale-95"
+              />
+              <div className="min-w-0">
+                <h1 className="font-hadith text-[1.4rem] font-bold leading-none text-ink">
+                  {strings.appName}
+                </h1>
+                <p className="mt-0.5 truncate text-xs text-muted">{strings.appSubtitle}</p>
+              </div>
+            </>
+          )}
         </button>
 
         <div className="flex shrink-0 items-center gap-0.5">

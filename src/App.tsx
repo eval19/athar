@@ -172,6 +172,7 @@ export default function App() {
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <Header
+        locale={locale}
         strings={strings}
         onToggleLocale={() => setLocale((prev) => (prev === 'ar' ? 'en' : 'ar'))}
         onOpenSettings={() => setSettingsOpen(true)}
