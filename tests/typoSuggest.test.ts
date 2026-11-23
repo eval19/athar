@@ -116,4 +116,23 @@ describe('suggestArabicQuery', () => {
     expect(res.changed).toBe(false);
     expect(res.alternatives).toEqual([]);
   });
+
+  it('recovers 2-letter keyboard typos inside possessive ة->ت stems (هحىته and هحبته -> هجرته)', () => {
+    const resYa = suggestArabicQuery('فمن كانت هحىته الى الله');
+    expect(resYa.correctedQuery).toBe('فمن كانت هجرته الى الله');
+    expect(resYa.changed).toBe(true);
+
+    const resBa = suggestArabicQuery('فمن كانت هحبته الى الله');
+    expect(resBa.correctedQuery).toBe('فمن كانت هجرته الى الله');
+    expect(resBa.changed).toBe(true);
+  });
+
+  it('protects attached Arabic particles and conjunctions from false rewrites', () => {
+    const particles = ['فمن', 'ومن', 'لكل', 'فقد', 'فهو', 'فلم', 'فإذا', 'وكانت'];
+    for (const word of particles) {
+      const res = suggestArabicQuery(word);
+      expect(res.changed).toBe(false);
+      expect(res.correctedQuery).toBe(word);
+    }
+  });
 });

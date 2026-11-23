@@ -67,4 +67,19 @@ describe('rerankRelaxedResults', () => {
     expect(res.recoveredQuery).toBeUndefined();
     expect(res.topScore).toBe(0);
   });
+
+  it('blocks unrelated Medina/Allah cards when stopwords cannot match fuzzy and second content word misses', () => {
+    const items = [
+      makeHadith(
+        'm1',
+        'المدينةُ حَرمٌ آمِنٌ [ يعني حديث: أهْوَى رسولُ اللهِ صلَّى اللهُ عليه وسلَّمَ بيدِهِ إلى المدينةِ، فقال: إنَّها حَرَمٌ آمِنٌ .]',
+      ),
+      makeHadith('m2', 'أنتَ الذي أنعمَ اللهُ عليه بالهدايةِ إلى دينِهِ'),
+    ];
+
+    const res = rerankRelaxedResults(items, 'فمن كانت هحىته الى الله');
+
+    expect(res.items).toEqual([]);
+    expect(res.recoveredQuery).toBeUndefined();
+  });
 });

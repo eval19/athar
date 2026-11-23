@@ -424,7 +424,6 @@ export class DorarProvider implements HadithProvider {
     // Stages 1–4 strictly share a 3-attempt fallback budget
     let fallbackBudget = 3;
     const suggestion = suggestArabicQuery(initialQuery);
-    const bestSpellQuery = suggestion.changed ? suggestion.correctedQuery : initialQuery;
 
     // Stage 1: Weighted Arabic spell-correction
     if (fallbackBudget > 0 && suggestion.changed && suggestion.correctedQuery !== initialQuery) {
@@ -465,9 +464,10 @@ export class DorarProvider implements HadithProvider {
       }
     }
 
-    // Stage 2: Conversational filler stripping
-    const stripped = stripQueryFillers(bestSpellQuery);
-    if (fallbackBudget > 0 && stripped && stripped !== bestSpellQuery) {
+    // Stage 2: Conversational filler stripping (always from initialQuery so failed
+    // Stage 1 guesses never leak into relaxed stages)
+    const stripped = stripQueryFillers(initialQuery);
+    if (fallbackBudget > 0 && stripped && stripped !== initialQuery) {
       const strippedPass = await runAttempt(stripped, 'w');
       if (strippedPass !== null) fallbackBudget -= 1;
       if (strippedPass && strippedPass.rawCount > 0) {
@@ -485,7 +485,7 @@ export class DorarProvider implements HadithProvider {
 
     // Stage 3: Relaxed any-word (st=a) + local fuzzy/proximity re-ranker
     const baseForRelaxed =
-      stripped && stripped !== initialQuery ? stripped : bestSpellQuery;
+      stripped && stripped !== initialQuery ? stripped : initialQuery;
     const relaxedQuery = buildRelaxedSurfaceQuery(baseForRelaxed);
     if (fallbackBudget > 0 && relaxedQuery) {
       const relaxedPass = await runAttempt(relaxedQuery, 'a', 1);

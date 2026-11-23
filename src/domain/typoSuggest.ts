@@ -65,23 +65,50 @@ const LONG_VOWELS = new Set(['ا', 'و', 'ي']);
 const PHONETIC_CONFUSION_PAIRS = new Set([
   'ض|ظ', 'ذ|ز', 'ذ|ظ', 'ز|ظ',
   'س|ص', 'س|ث', 'ص|ث',
-  'ت|ط', 'ت|ه',
+  'ت|ط',
   'د|ض', 'د|ذ', 'د|ط',
   'ق|ك',
   'ح|ه', 'ح|خ',
   'ع|غ',
+  // Visual single-dot Arabic letter pairs
+  'ج|ح', 'ر|ز', 'س|ش', 'ص|ض', 'ط|ظ', 'ف|ق',
 ]);
 
-// Normalized Arabic-101 3-row mobile/desktop keyboard coordinates
-const AR_KEY_COORDS: Readonly<Record<string, readonly [number, number]>> = {
+// Multi-key normalized Arabic mobile (Gboard/Android) & Arabic-101 positions,
+// mapping normalized variants (ي/ى, ه/ة, و/ؤ) to all physical key coordinates.
+const AR_KEY_COORDS: Readonly<Record<string, ReadonlyArray<readonly [number, number]>>> = {
   // Row 0
-  ض: [0, 0], ص: [0, 1], ث: [0, 2], ق: [0, 3], ف: [0, 4], غ: [0, 5],
-  ع: [0, 6], ه: [0, 7], خ: [0, 8], ح: [0, 9], ج: [0, 10], د: [0, 11],
+  ض: [[0, 0]],
+  ص: [[0, 1]],
+  ث: [[0, 2]],
+  ق: [[0, 3]],
+  ف: [[0, 4]],
+  غ: [[0, 5]],
+  ع: [[0, 6]],
+  ه: [[0, 7], [2, 5]],
+  خ: [[0, 8]],
+  ح: [[0, 9]],
+  ج: [[0, 10]],
+  د: [[0, 11]],
   // Row 1
-  ش: [1, 0], س: [1, 1], ي: [1, 2], ب: [1, 3], ل: [1, 4], ا: [1, 5],
-  ت: [1, 6], ن: [1, 7], م: [1, 8], ك: [1, 9], ط: [1, 10],
-  // Row 2 (normalized forms share bottom keys; ة/و/ز/ظ follow standard layout)
-  ء: [2, 1], و: [2, 7], ر: [2, 3], ز: [2, 8], ظ: [2, 9], ذ: [0, 0],
+  ش: [[1, 0]],
+  س: [[1, 1]],
+  ي: [[1, 2], [2, 4]],
+  ب: [[1, 3]],
+  ل: [[1, 4]],
+  ا: [[1, 5]],
+  ت: [[1, 6]],
+  ن: [[1, 7]],
+  م: [[1, 8]],
+  ك: [[1, 9]],
+  ط: [[1, 10]],
+  // Row 2
+  ذ: [[2, 0], [0, 0]],
+  ء: [[2, 1]],
+  و: [[2, 6], [2, 2]],
+  ر: [[2, 3]],
+  ز: [[2, 7]],
+  ظ: [[2, 8]],
 };
 
 let cachedIndex: VocabIndex | null = null;
@@ -165,23 +192,28 @@ function getIndex(): VocabIndex {
   return cachedIndex;
 }
 
-function substitutionCost(a: string, b: string): number {
+function substitutionCost(a: string, b: string, isFinalPosition: boolean): number {
   if (a === b) return 0;
+
+  if (isFinalPosition && ((a === 'ت' && b === 'ه') || (a === 'ه' && b === 'ت'))) {
+    return 0.35;
+  }
 
   const pair = a < b ? `${a}|${b}` : `${b}|${a}`;
   if (PHONETIC_CONFUSION_PAIRS.has(pair)) {
     return 0.35;
   }
 
-  const posA = AR_KEY_COORDS[a];
-  const posB = AR_KEY_COORDS[b];
-  if (
-    posA &&
-    posB &&
-    Math.abs(posA[0] - posB[0]) <= 1 &&
-    Math.abs(posA[1] - posB[1]) <= 1
-  ) {
-    return 0.55;
+  const positionsA = AR_KEY_COORDS[a];
+  const positionsB = AR_KEY_COORDS[b];
+  if (positionsA && positionsB) {
+    for (const [r1, c1] of positionsA) {
+      for (const [r2, c2] of positionsB) {
+        if (Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1) {
+          return 0.55;
+        }
+      }
+    }
   }
 
   return 1.0;
@@ -230,7 +262,7 @@ export function weightedArabicDistance(a: string, b: string): number {
       let best = Math.min(
         dp[i - 1][j] + indelCost(a, i),
         dp[i][j - 1] + indelCost(b, j),
-        dp[i - 1][j - 1] + substitutionCost(a[i - 1], b[j - 1]),
+        dp[i - 1][j - 1] + substitutionCost(a[i - 1], b[j - 1], i === m && j === n),
       );
 
       if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
@@ -607,7 +639,7 @@ function suggestSingleWord(
     collectPrefixedAlCandidates(normFull, index, scored, seenBest);
   }
 
-  // Check suffixed stem fuzzy recovery (e.g. صالتكم -> صلاتكم)
+  // Check suffixed stem fuzzy recovery (e.g. صالتكم -> صلاتكم, هحىته -> هجرته)
   const suffixParts = splitArabicSuffix(activePrefix ? afterPrefix : working);
   if (suffixParts.suffix && suffixParts.stem.length >= 3) {
     collectStemCandidates(
@@ -619,6 +651,17 @@ function suggestSingleWord(
       scored,
       seenBest,
     );
+    if (suffixParts.morphAltNorm && suffixParts.morphAltNorm.length >= 3) {
+      collectStemCandidates(
+        suffixParts.morphAltNorm,
+        activePrefix,
+        suffixParts.suffix,
+        0.12,
+        index,
+        scored,
+        seenBest,
+      );
+    }
   }
 
   scored.sort((a, b) => (a.score !== b.score ? a.score - b.score : a.dist - b.dist));

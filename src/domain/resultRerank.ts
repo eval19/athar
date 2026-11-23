@@ -120,6 +120,10 @@ function buildQuerySpecs(query: string): QueryTokenSpec[] {
 function tokenPairSimilarity(q: QueryTokenSpec, h: HadithToken): number {
   if (q.norm === h.norm) return 1.0;
 
+  // Stopwords and particles must match verbatim so function words like كانت or فمن
+  // never hijack unrelated hadiths via أنت or آمن.
+  if (!q.isContent) return 0;
+
   if (q.stemNorm.length >= 3 && h.stemNorm.length >= 3 && q.stemNorm === h.stemNorm) {
     return 0.92;
   }
@@ -292,13 +296,10 @@ function passesRelevanceFloor(score: HadithMatchScore): boolean {
     return score.rawCoverage >= 0.68;
   }
   if (score.contentCount === 2) {
-    return (
-      score.rawCoverage >= 0.52 &&
-      (score.matchedContentCount >= 2 || score.bestSingleSim >= 0.88)
-    );
+    return score.matchedContentCount >= 2 && score.rawCoverage >= 0.52;
   }
-  const minMatched = Math.max(2, Math.ceil(score.contentCount * 0.5));
-  return score.matchedContentCount >= minMatched && score.rawCoverage >= 0.5;
+  const minMatched = Math.max(2, Math.ceil(score.contentCount * 0.6));
+  return score.matchedContentCount >= minMatched && score.rawCoverage >= 0.52;
 }
 
 function countHamzas(word: string): number {

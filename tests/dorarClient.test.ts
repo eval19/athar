@@ -463,4 +463,49 @@ describe('DorarProvider smart typo recovery', () => {
     expect(res.items).toEqual([]);
     expect(res.suggestions).toEqual([]);
   });
+
+  it('recovers "فمن كانت هحىته الى الله" via Stage 1 in 2 requests without rewriting فمن/كانت', async () => {
+    const requestedUrls: string[] = [];
+    const hijrahBody = JSON.stringify({
+      ahadith: {
+        result: `
+<div class="hadith">1 - إنَّما الأعمالُ بالنِّيَّةِ، فمَن كانت هجرتُه إلى اللهِ ورسولِه</div>
+<div class="hadith-info">
+<span class="info-subtitle">الراوي:</span> عمر بن الخطاب
+<span class="info-subtitle">المحدث:</span> البخاري
+<span class="info-subtitle">المصدر:</span> صحيح البخاري
+<span class="info-subtitle">الصفحة أو الرقم:</span> 1
+<span class="info-subtitle">خلاصة حكم المحدث:</span> صحيح
+</div>
+--------------
+<a href="#">المزيد</a>
+`,
+      },
+    });
+
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      if (new URL(url).searchParams.get('skey') === 'فمن كانت هجرته الى الله') {
+        return hijrahBody;
+      }
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    const res = await provider.search({
+      query: 'فمن كانت هحىته الى الله',
+      filter: 'all',
+      page: 1,
+    });
+
+    expect(requestedUrls).toHaveLength(2);
+    expect(res.items).toHaveLength(1);
+    expect(res.effectiveQuery).toBe('فمن كانت هجرته الى الله');
+    expect(res.correctedFrom).toBe('فمن كانت هحىته الى الله');
+    expect(res.recoveryMode).toBe('typo');
+  });
 });
