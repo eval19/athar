@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { FilterMode, HadithResult } from '../domain/hadith';
+import type { FilterMode, HadithResult, RecoveryMode } from '../domain/hadith';
 import { DorarProvider } from '../services/dorarClient';
 import {
   clearRecentSearches,
@@ -16,6 +16,7 @@ export function useHadithSearch() {
   const [activeQuery, setActiveQuery] = useState('');
   const [effectiveQuery, setEffectiveQuery] = useState('');
   const [correctedFrom, setCorrectedFrom] = useState<string | undefined>(undefined);
+  const [recoveryMode, setRecoveryMode] = useState<RecoveryMode | undefined>(undefined);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [filter, setFilter] = useState<FilterMode>('all');
 
@@ -40,6 +41,7 @@ export function useHadithSearch() {
     setActiveQuery('');
     setEffectiveQuery('');
     setCorrectedFrom(undefined);
+    setRecoveryMode(undefined);
     setSuggestions([]);
     setItems([]);
     setHasMore(false);
@@ -94,6 +96,7 @@ export function useHadithSearch() {
           setItems(res.items);
           setEffectiveQuery(res.effectiveQuery);
           setCorrectedFrom(res.correctedFrom);
+          setRecoveryMode(res.recoveryMode);
           setSuggestions(res.suggestions);
           if (res.items.length > 0) {
             setRecentSearches((prev) => pushRecentSearch(prev, res.effectiveQuery));
@@ -226,6 +229,7 @@ export function useHadithSearch() {
     activeQuery,
     effectiveQuery,
     correctedFrom,
+    recoveryMode,
     suggestions,
     filter,
     setFilter: handleSetFilter,

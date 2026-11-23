@@ -327,4 +327,140 @@ describe('DorarProvider smart typo recovery', () => {
     // 1 call for osoul + 1 call for alts (second calls served from cache)
     expect(calls).toBe(2);
   });
+
+  it('recovers conversational filler queries in Stage 2 with recoveryMode relaxed', async () => {
+    const requestedUrls: string[] = [];
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      if (new URL(url).searchParams.get('skey') === 'الصبر') {
+        return VALID_NAR_BODY;
+      }
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    const res = await provider.search({
+      query: 'حديث عن فضل الصبر',
+      filter: 'all',
+      page: 1,
+    });
+
+    expect(requestedUrls).toHaveLength(2);
+    expect(new URL(requestedUrls[1]).searchParams.get('skey')).toBe('الصبر');
+    expect(res.items).toHaveLength(1);
+    expect(res.effectiveQuery).toBe('الصبر');
+    expect(res.correctedFrom).toBe('حديث عن فضل الصبر');
+    expect(res.recoveryMode).toBe('relaxed');
+  });
+
+  it('recovers multi-typo phrases via Stage 3 relaxed st=a + local fuzzy re-ranking', async () => {
+    const requestedUrls: string[] = [];
+    const mixedStAResponse = JSON.stringify({
+      ahadith: {
+        result: `
+<div class="hadith">1 - مَن لم يوتِرْ فليس مِنَّا</div>
+<div class="hadith-info">
+<span class="info-subtitle">الراوي:</span> أبو أيوب
+<span class="info-subtitle">المحدث:</span> شعيب الأرناؤوط
+<span class="info-subtitle">المصدر:</span> المسند
+<span class="info-subtitle">الصفحة أو الرقم:</span> 22
+<span class="info-subtitle">خلاصة حكم المحدث:</span> صحيح
+</div>
+--------------
+<div class="hadith">2 - من غشَّنا فليسَ منَّا</div>
+<div class="hadith-info">
+<span class="info-subtitle">الراوي:</span> أبو هريرة
+<span class="info-subtitle">المحدث:</span> مسلم
+<span class="info-subtitle">المصدر:</span> صحيح مسلم
+<span class="info-subtitle">الصفحة أو الرقم:</span> 101
+<span class="info-subtitle">خلاصة حكم المحدث:</span> صحيح
+</div>
+--------------
+<a href="#">المزيد</a>
+`,
+      },
+    });
+
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      if (new URL(url).searchParams.get('st') === 'a') {
+        return mixedStAResponse;
+      }
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    const res = await provider.search({
+      query: 'من غشانا فليس مننا',
+      filter: 'all',
+      page: 1,
+    });
+
+    expect(requestedUrls.some((u) => u.includes('st=a'))).toBe(true);
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].text).toBe('من غشَّنا فليسَ منَّا');
+    expect(res.effectiveQuery).toBe('من غشنا فليس منا');
+    expect(res.correctedFrom).toBe('من غشانا فليس مننا');
+    expect(res.recoveryMode).toBe('typo');
+  });
+
+  it('recovers modern concepts via Stage 4 curated mapping with recoveryMode concept', async () => {
+    const requestedUrls: string[] = [];
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      if (new URL(url).searchParams.get('skey') === 'الهم والحزن') {
+        return VALID_NAR_BODY;
+      }
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    const res = await provider.search({
+      query: 'الاكتئاب',
+      filter: 'all',
+      page: 1,
+    });
+
+    expect(requestedUrls).toHaveLength(2);
+    expect(res.items).toHaveLength(1);
+    expect(res.effectiveQuery).toBe('الهم والحزن');
+    expect(res.correctedFrom).toBe('الاكتئاب');
+    expect(res.recoveryMode).toBe('concept');
+    expect(res.suggestions).toContain('تفريج الكرب');
+  });
+
+  it('makes only 1 HTTP call for hopeless single-token gibberish with empty state', async () => {
+    const requestedUrls: string[] = [];
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    const res = await provider.search({
+      query: 'خقضصثق',
+      filter: 'all',
+      page: 1,
+    });
+
+    expect(requestedUrls).toHaveLength(1);
+    expect(res.items).toEqual([]);
+    expect(res.suggestions).toEqual([]);
+  });
 });

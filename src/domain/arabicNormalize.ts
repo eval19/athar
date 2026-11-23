@@ -123,6 +123,280 @@ export function collapseRepeatedChars(input: string): string {
     .join('');
 }
 
+const SPLIT_PREFIXES = new Set(['ال', 'وال', 'بال', 'فال', 'كال', 'لل']);
+const ARABIC_WORD_2PLUS_REGEX = /^[\u0621-\u064A\u0671]{2,}$/u;
+
+/**
+ * Repairs accidental whitespace inserted immediately after an attached Arabic
+ * prefix (e.g. "ال صلاة" -> "الصلاة", "بال نيات" -> "بالنيات"), while never
+ * merging "آل" (family of) or prefixing onto words already starting with "ال".
+ */
+export function repairSplitArabicWords(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+
+  const tokens = trimmed.split(/\s+/);
+  const repaired: string[] = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const curr = tokens[i];
+    const currBare = stripDiacritics(curr);
+    const next = i + 1 < tokens.length ? tokens[i + 1] : '';
+    const nextBare = next ? stripDiacritics(next) : '';
+    const nextNormStart = nextBare ? normalizeArabicChar(nextBare[0]) + nextBare.slice(1) : '';
+
+    if (
+      SPLIT_PREFIXES.has(currBare) &&
+      ARABIC_WORD_2PLUS_REGEX.test(nextBare) &&
+      !nextNormStart.startsWith('ال')
+    ) {
+      repaired.push(`${curr}${next}`);
+      i += 1;
+    } else {
+      repaired.push(curr);
+    }
+  }
+
+  return repaired.join(' ');
+}
+
+const PHRASE_ORTHOGRAPHY_RULES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(?<![\p{L}\p{N}])[إا]نشاء\s+الله(?![\p{L}\p{N}])/gu, 'إن شاء الله'],
+  [/(?<![\p{L}\p{N}])ماشاء\s+الله(?![\p{L}\p{N}])/gu, 'ما شاء الله'],
+  [
+    /(?<![\p{L}\p{N}])(?:لااله\s*[إا]لا\s*الله|لا\s*[إا]له\s*[إا]لاالله|لااله\s*[إا]لاالله)(?![\p{L}\p{N}])/gu,
+    'لا إله إلا الله',
+  ],
+  [/(?<![\p{L}\p{N}])صل[ىي]الله(?![\p{L}\p{N}])/gu, 'صلى الله'],
+  [/(?<![\p{L}\p{N}])رسولالله(?![\p{L}\p{N}])/gu, 'رسول الله'],
+  [/(?<![\p{L}\p{N}])عبدالله(?![\p{L}\p{N}])/gu, 'عبد الله'],
+  [/(?<![\p{L}\p{N}])سبحانالله(?![\p{L}\p{N}])/gu, 'سبحان الله'],
+  [/(?<![\p{L}\p{N}])الحمدلله(?![\p{L}\p{N}])/gu, 'الحمد لله'],
+  [/(?<![\p{L}\p{N}])[أا]ستغفرالله(?![\p{L}\p{N}])/gu, 'أستغفر الله'],
+  [/(?<![\p{L}\p{N}])باركالله(?![\p{L}\p{N}])/gu, 'بارك الله'],
+  [/(?<![\p{L}\p{N}])جزاكالله(?![\p{L}\p{N}])/gu, 'جزاك الله'],
+  [/(?<![\p{L}\p{N}])[إا]نماالأعمال(?![\p{L}\p{N}])/gu, 'إنما الأعمال'],
+  [/(?<![\p{L}\p{N}])انماالاعمال(?![\p{L}\p{N}])/gu, 'إنما الأعمال'],
+  [/(?<![\p{L}\p{N}])فليسمنا(?![\p{L}\p{N}])/gu, 'فليس منا'],
+  [/(?<![\p{L}\p{N}])منغشنا(?![\p{L}\p{N}])/gu, 'من غشنا'],
+  [/(?<![\p{L}\p{N}])لاي[ؤو]من(?![\p{L}\p{N}])/gu, 'لا يؤمن'],
+  [/(?<![\p{L}\p{N}])لايدخل(?![\p{L}\p{N}])/gu, 'لا يدخل'],
+];
+
+const SINGLE_ORTHOGRAPHY_MAP: Readonly<Record<string, string>> = {
+  لاكن: 'لكن',
+  ولاكن: 'ولكن',
+  هاذا: 'هذا',
+  هاذه: 'هذه',
+  هاؤلاء: 'هؤلاء',
+  هاولاء: 'هؤلاء',
+  ذالك: 'ذلك',
+  كذالك: 'كذلك',
+  الرحمان: 'الرحمن',
+  داوود: 'داود',
+  اللة: 'الله',
+  واللة: 'والله',
+  باللة: 'بالله',
+  شئ: 'شيء',
+  مسؤل: 'مسؤول',
+};
+
+/**
+ * Applies deterministic, zero-ambiguity Arabic orthographic fixes for common
+ * fused devotional phrases and classic spelling slips (e.g. لاكن -> لكن).
+ */
+export function normalizeCommonOrthography(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+
+  let out = trimmed;
+  for (const [pattern, replacement] of PHRASE_ORTHOGRAPHY_RULES) {
+    out = out.replace(pattern, replacement);
+  }
+
+  return out
+    .split(/\s+/)
+    .map((tok) => {
+      const bare = stripDiacritics(tok);
+      return SINGLE_ORTHOGRAPHY_MAP[bare] ?? tok;
+    })
+    .join(' ');
+}
+
+const EN_TO_AR_QWERTY: Readonly<Record<string, string>> = {
+  q: 'ض',
+  w: 'ص',
+  e: 'ث',
+  r: 'ق',
+  t: 'ف',
+  y: 'غ',
+  u: 'ع',
+  i: 'ه',
+  o: 'خ',
+  p: 'ح',
+  '[': 'ج',
+  ']': 'د',
+  a: 'ش',
+  s: 'س',
+  d: 'ي',
+  f: 'ب',
+  g: 'ل',
+  h: 'ا',
+  j: 'ت',
+  k: 'ن',
+  l: 'م',
+  ';': 'ك',
+  "'": 'ط',
+  z: 'ئ',
+  x: 'ء',
+  c: 'ؤ',
+  v: 'ر',
+  b: 'لا',
+  n: 'ى',
+  m: 'ة',
+  ',': 'و',
+  '.': 'ز',
+  '/': 'ظ',
+  '`': 'ذ',
+};
+
+const ENGLISH_GUARD_WORDS = new Set([
+  'hadith', 'prayer', 'fasting', 'islam', 'allah', 'prophet', 'mercy', 'charity',
+  'quran', 'sunnah', 'sahih', 'hasan', 'weak', 'hell', 'paradise', 'heaven',
+  'faith', 'patience', 'mother', 'father', 'god', 'peace', 'love', 'truth',
+  'death', 'life', 'good', 'evil', 'help', 'search', 'the', 'and', 'for',
+  'about', 'what', 'how', 'who', 'why', 'niyyah', 'sabr', 'dua', 'dhikr',
+  'zakat', 'hajj', 'ramadan', 'wudu', 'jannah', 'jahannam',
+]);
+
+/**
+ * Converts a query accidentally typed on an English QWERTY keyboard into its
+ * corresponding Arabic-101 layout string (e.g. "Hgwghm" -> "الصلاة"), returning
+ * null for URLs, mixed Arabic text, or recognized English words.
+ */
+export function convertEnKeyboardToArabic(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (!/[a-zA-Z]/.test(trimmed)) return null;
+  if (/[\u0600-\u06FF]/.test(trimmed)) return null;
+  if (/https?:\/\//i.test(trimmed)) return null;
+
+  const lower = trimmed.toLowerCase();
+  const latinWords = lower.match(/[a-z]+/g) ?? [];
+  for (const w of latinWords) {
+    if (ENGLISH_GUARD_WORDS.has(w)) return null;
+  }
+
+  let mapped = '';
+  for (const ch of lower) {
+    if (ch in EN_TO_AR_QWERTY) {
+      mapped += EN_TO_AR_QWERTY[ch];
+    } else if (/\s/.test(ch)) {
+      mapped += ' ';
+    } else if (/[0-9]/.test(ch)) {
+      mapped += ch;
+    } else {
+      return null;
+    }
+  }
+
+  const collapsed = mapped.replace(/\s+/g, ' ').trim();
+  return collapsed || null;
+}
+
+export const ARABIC_STOP_WORDS: ReadonlySet<string> = new Set([
+  'في', 'من', 'علي', 'الي', 'عن', 'ما', 'لا', 'ان', 'هذا', 'هذه', 'التي', 'الذي',
+  'الذين', 'هو', 'هي', 'هم', 'كان', 'كانت', 'يكون', 'او', 'ثم', 'بل', 'قد', 'لم',
+  'لن', 'هل', 'كيف', 'اين', 'متي', 'كم', 'مع', 'عند', 'بين', 'حتي', 'الا', 'غير',
+  'كل', 'بعض', 'اي', 'لو', 'اذا', 'اذ', 'انه', 'انها', 'فيها', 'فيه', 'منه', 'منها',
+  'عليه', 'عليها', 'له', 'لها', 'بها', 'به', 'ذلك', 'تلك', 'هولاء', 'كذلك', 'ايضا',
+]);
+
+export const ARABIC_QUERY_FILLERS: ReadonlySet<string> = new Set([
+  'حديث', 'احاديث', 'الحديث', 'الاحاديث', 'صحيح', 'ضعيف', 'حكم', 'فضل', 'فوايد',
+  'قصه', 'ذكر', 'ورد', 'جاء', 'روي', 'قال', 'يقول', 'النبي', 'الرسول', 'رسول',
+  'صلي', 'وسلم', 'عنه', 'رضي', 'اريد', 'ابحث', 'حول', 'بشان', 'بخصوص', 'معني',
+  'تفسير', 'شرح', 'ماهو', 'ماهي', 'هل', 'عن',
+]);
+
+/**
+ * Removes conversational search wrappers and stopwords from natural-language
+ * Arabic queries when at least one meaningful content word survives.
+ */
+export function stripQueryFillers(query: string): string {
+  const trimmed = query.trim();
+  if (!trimmed) return '';
+
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  const kept = tokens.filter((tok) => {
+    const norm = normalizeArabic(tok);
+    return (
+      norm.length >= 2 &&
+      !ARABIC_STOP_WORDS.has(norm) &&
+      !ARABIC_QUERY_FILLERS.has(norm)
+    );
+  });
+
+  return kept.length > 0 ? kept.join(' ') : trimmed;
+}
+
+/**
+ * Extracts normalized content tokens (length >= 2) while filtering stopwords and
+ * conversational wrappers, falling back to all normalized tokens if none survive.
+ */
+export function extractContentTokens(query: string): string[] {
+  const allTokens = normalizeArabic(query)
+    .split(/\s+/)
+    .filter((tok) => tok.length >= 2);
+  if (allTokens.length === 0) return [];
+
+  const content = allTokens.filter(
+    (tok) => !ARABIC_STOP_WORDS.has(tok) && !ARABIC_QUERY_FILLERS.has(tok),
+  );
+  return content.length > 0 ? content : allTokens;
+}
+
+const PHONETIC_SKELETON_CHAR_MAP: Readonly<Record<string, string>> = {
+  ظ: 'ض',
+  ذ: 'ز',
+  ص: 'س',
+  ث: 'س',
+  ط: 'ت',
+  ه: 'ت',
+  ق: 'ك',
+  خ: 'ح',
+  غ: 'ع',
+};
+
+const MEDIAL_VOWELS = new Set(['ا', 'و', 'ي']);
+
+/**
+ * Produces a phonetic skeleton for an already-normalized Arabic word by collapsing
+ * sound-alike consonants, consecutive duplicates, and medial long vowels.
+ */
+export function arabicPhoneticSkeleton(normWord: string): string {
+  if (!normWord) return '';
+
+  let mapped = '';
+  for (const ch of normWord) {
+    mapped += PHONETIC_SKELETON_CHAR_MAP[ch] ?? ch;
+  }
+
+  const collapsed = mapped.replace(/(.)\1+/gu, '$1');
+  if (collapsed.length <= 2) return collapsed;
+
+  let out = collapsed[0];
+  for (let i = 1; i < collapsed.length - 1; i++) {
+    const ch = collapsed[i];
+    if (!MEDIAL_VOWELS.has(ch)) {
+      out += ch;
+    }
+  }
+  out += collapsed[collapsed.length - 1];
+
+  return out.replace(/(.)\1+/gu, '$1');
+}
+
 const VALID_HIGHLIGHT_PREFIXES = new Set([
   '',
   'ال',

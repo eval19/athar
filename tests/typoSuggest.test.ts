@@ -66,4 +66,54 @@ describe('suggestArabicQuery', () => {
     expect(res.correctedQuery).not.toContain('ألف');
     expect(res.changed).toBe(false);
   });
+
+  it('recovers Arabic phonetic sound-alike confusions cleanly', () => {
+    expect(suggestArabicQuery('الذكات').correctedQuery).toBe('الزكاة');
+    expect(suggestArabicQuery('الصلات').correctedQuery).toBe('الصلاة');
+    expect(suggestArabicQuery('ضلم').correctedQuery).toBe('ظلم');
+    expect(suggestArabicQuery('سبر').correctedQuery).toBe('صبر');
+    expect(suggestArabicQuery('التهاره').correctedQuery).toBe('الطهارة');
+    expect(suggestArabicQuery('الطهاره').changed).toBe(false);
+  });
+
+  it('fixes adjacent mobile keyboard slips and vowel omissions or additions', () => {
+    expect(suggestArabicQuery('بالنايت').correctedQuery).toBe('بالنيات');
+    expect(suggestArabicQuery('الاستغفرا').correctedQuery).toBe('الاستغفار');
+    expect(suggestArabicQuery('التواضوع').correctedQuery).toBe('التواضع');
+  });
+
+  it('handles full Arabic prefix and suffix morphology in spell recovery', () => {
+    expect(suggestArabicQuery('صلاتكمم').correctedQuery).toBe('صلاتكم');
+    expect(suggestArabicQuery('قلوبهمم').correctedQuery).toBe('قلوبهم');
+    expect(suggestArabicQuery('المؤمنيين').correctedQuery).toBe('المؤمنين');
+  });
+
+  it('splits fused/merged Arabic words cleanly into separate tokens', () => {
+    expect(suggestArabicQuery('انماالاعمال').correctedQuery).toBe('إنما الأعمال');
+    expect(suggestArabicQuery('غضالبصر').correctedQuery).toBe('غض البصر');
+    expect(suggestArabicQuery('عذابالقبر').correctedQuery).toBe('عذاب القبر');
+  });
+
+  it('rescues verified wrong-keyboard Latin input while never mangling English words', () => {
+    expect(suggestArabicQuery('Hgwghm')).toEqual({
+      correctedQuery: 'الصلاة',
+      changed: true,
+      alternatives: ['الصلاة'],
+    });
+    expect(suggestArabicQuery('hgkhv').correctedQuery).toBe('النار');
+
+    expect(suggestArabicQuery('prayer')).toEqual({
+      correctedQuery: 'prayer',
+      changed: false,
+      alternatives: [],
+    });
+    expect(suggestArabicQuery('niyyah').changed).toBe(false);
+  });
+
+  it('refuses to rewrite unrecognized random Arabic gibberish', () => {
+    const res = suggestArabicQuery('خقضصثق');
+    expect(res.correctedQuery).toBe('خقضصثق');
+    expect(res.changed).toBe(false);
+    expect(res.alternatives).toEqual([]);
+  });
 });

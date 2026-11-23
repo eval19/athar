@@ -54,11 +54,14 @@ export interface SearchRequest {
   signal?: AbortSignal;
 }
 
+export type RecoveryMode = 'typo' | 'relaxed' | 'concept';
+
 export interface SearchResponse {
   items: HadithResult[];
   page: number;
   hasMore: boolean;
   effectiveQuery: string;
   correctedFrom?: string;
+  recoveryMode?: RecoveryMode;
   suggestions: string[];
 }

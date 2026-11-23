@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   collapseRepeatedChars,
+  convertEnKeyboardToArabic,
   findArabicHighlightSegments,
   normalizeArabic,
+  normalizeCommonOrthography,
+  repairSplitArabicWords,
   stripDiacritics,
+  stripQueryFillers,
 } from '../src/domain/arabicNormalize';
 
 describe('stripDiacritics', () => {
@@ -104,5 +108,42 @@ describe('findArabicHighlightSegments', () => {
       'لي',
       'جبريلُ',
     ]);
+  });
+});
+
+describe('repairSplitArabicWords', () => {
+  it('rejoins detached definite article prefixes without mangling آل or ال البيت', () => {
+    expect(repairSplitArabicWords('ال صلاة')).toBe('الصلاة');
+    expect(repairSplitArabicWords('بال نيات')).toBe('بالنيات');
+    expect(repairSplitArabicWords('وال صبر')).toBe('والصبر');
+    expect(repairSplitArabicWords('آل البيت')).toBe('آل البيت');
+    expect(repairSplitArabicWords('ال البيت')).toBe('ال البيت');
+  });
+});
+
+describe('normalizeCommonOrthography', () => {
+  it('fixes classic Arabic spelling slips and fused phrases deterministically', () => {
+    expect(normalizeCommonOrthography('لاكن')).toBe('لكن');
+    expect(normalizeCommonOrthography('هاذا')).toBe('هذا');
+    expect(normalizeCommonOrthography('الرحمان')).toBe('الرحمن');
+    expect(normalizeCommonOrthography('رسولالله')).toBe('رسول الله');
+    expect(normalizeCommonOrthography('انشاء الله')).toBe('إن شاء الله');
+  });
+});
+
+describe('convertEnKeyboardToArabic', () => {
+  it('converts Arabic typed on English QWERTY layout while rejecting real English words and URLs', () => {
+    expect(convertEnKeyboardToArabic('Hgwghm')).toBe('الصلاة');
+    expect(convertEnKeyboardToArabic('hgkhv')).toBe('النار');
+    expect(convertEnKeyboardToArabic('prayer')).toBeNull();
+    expect(convertEnKeyboardToArabic('hadith')).toBeNull();
+    expect(convertEnKeyboardToArabic('https://dorar.net')).toBeNull();
+  });
+});
+
+describe('stripQueryFillers', () => {
+  it('strips conversational search wrappers while keeping meaningful keywords', () => {
+    expect(stripQueryFillers('حديث عن فضل الصبر على المصيبة')).toBe('الصبر المصيبة');
+    expect(stripQueryFillers('ما قال الرسول عن الغضب')).toBe('الغضب');
   });
 });

@@ -203,7 +203,11 @@ export default function App() {
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
               <div className="min-w-0 flex-1 space-y-2">
                 <p className="font-medium leading-relaxed">
-                  {strings.correctedBanner(search.effectiveQuery, search.correctedFrom)}
+                  {search.recoveryMode === 'concept'
+                    ? strings.conceptBanner(search.effectiveQuery, search.correctedFrom)
+                    : search.recoveryMode === 'relaxed'
+                      ? strings.relaxedBanner(search.effectiveQuery, search.correctedFrom)
+                      : strings.correctedBanner(search.effectiveQuery, search.correctedFrom)}
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <button

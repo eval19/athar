@@ -1,9 +1,12 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import {
-  collapseRepeatedChars,
+  ARABIC_QUERY_FILLERS,
+  ARABIC_STOP_WORDS,
+  normalizeArabic,
   stripDiacritics,
-  stripStandaloneConjunctions,
+  stripQueryFillers,
 } from '../domain/arabicNormalize';
+import { findConceptExpansions } from '../domain/arabicVocab';
 import {
   parseDorarApiResponse,
   parseDorarOsoulHtml,
@@ -16,7 +19,8 @@ import {
   isUnauthenticBucket,
 } from '../domain/gradeClassifier';
 import { groupDuplicateHadiths } from '../domain/groupHadiths';
-import { suggestArabicQuery } from '../domain/typoSuggest';
+import { rerankRelaxedResults } from '../domain/resultRerank';
+import { prepareProactiveQuery, suggestArabicQuery } from '../domain/typoSuggest';
 import type {
   FilterMode,
   HadithResult,
@@ -69,10 +73,13 @@ function degreeParamsForFilter(filter: FilterMode): string[] {
 
 export function buildDorarSearchUrl(
   baseEndpoint: string,
-  params: { query: string; filter: FilterMode; page: number },
+  params: { query: string; filter: FilterMode; page: number; searchType?: 'w' | 'a' },
 ): string {
   const searchParams = new URLSearchParams();
   searchParams.set('skey', params.query.trim());
+  if (params.searchType === 'a') {
+    searchParams.set('st', 'a');
+  }
   if (params.page > 1) {
     searchParams.set('page', String(params.page));
   }
@@ -84,10 +91,13 @@ export function buildDorarSearchUrl(
 
 export function buildDorarWebSearchUrl(
   webBase: string,
-  params: { query: string; filter: FilterMode; page: number },
+  params: { query: string; filter: FilterMode; page: number; searchType?: 'w' | 'a' },
 ): string {
   const searchParams = new URLSearchParams();
   searchParams.set('q', params.query.trim());
+  if (params.searchType === 'a') {
+    searchParams.set('st', 'a');
+  }
   if (params.page > 1) {
     searchParams.set('page', String(params.page));
   }
@@ -183,6 +193,48 @@ const RELATED_ORDER: Record<HadithResult['gradeBucket'], number> = {
   unknown: 20,
 };
 
+function buildRelaxedSurfaceQuery(query: string): string {
+  const rawTokens = stripDiacritics(query).trim().split(/\s+/).filter(Boolean);
+  if (rawTokens.length < 2) return '';
+
+  const seenNorm = new Set<string>();
+  const content: Array<{ surface: string; normLen: number; index: number }> = [];
+
+  for (let i = 0; i < rawTokens.length; i++) {
+    const surface = rawTokens[i];
+    const norm = normalizeArabic(surface);
+    if (
+      norm.length < 2 ||
+      seenNorm.has(norm) ||
+      ARABIC_STOP_WORDS.has(norm) ||
+      ARABIC_QUERY_FILLERS.has(norm)
+    ) {
+      continue;
+    }
+    seenNorm.add(norm);
+    content.push({ surface, normLen: norm.length, index: i });
+  }
+
+  if (content.length === 0) return '';
+  if (content.length <= 5) {
+    return content.map((c) => c.surface).join(' ');
+  }
+
+  const topFive = [...content]
+    .sort((a, b) => (b.normLen !== a.normLen ? b.normLen - a.normLen : a.index - b.index))
+    .slice(0, 5)
+    .sort((a, b) => a.index - b.index);
+
+  return topFive.map((c) => c.surface).join(' ');
+}
+
+interface FetchBackfillResult {
+  items: HadithResult[];
+  rawCount: number;
+  lastPage: number;
+  hasMore: boolean;
+}
+
 export class DorarProvider implements HadithProvider {
   readonly id = 'dorar';
   private readonly webBase: string;
@@ -210,10 +262,16 @@ export class DorarProvider implements HadithProvider {
     filter: FilterMode,
     page: number,
     signal?: AbortSignal,
+    searchType?: 'w' | 'a',
   ): Promise<{ items: HadithResult[]; hasMore: boolean }> {
     if (this.useRichWebSearch) {
       try {
-        const webUrl = buildDorarWebSearchUrl(this.webBase, { query, filter, page });
+        const webUrl = buildDorarWebSearchUrl(this.webBase, {
+          query,
+          filter,
+          page,
+          searchType,
+        });
         const html = await this.fetcher(webUrl, signal);
         const parsed = parseDorarWebSearchHtml(html, page);
         if (parsed.recognized) {
@@ -225,7 +283,12 @@ export class DorarProvider implements HadithProvider {
       }
     }
 
-    const apiUrl = buildDorarSearchUrl(this.apiEndpoint, { query, filter, page });
+    const apiUrl = buildDorarSearchUrl(this.apiEndpoint, {
+      query,
+      filter,
+      page,
+      searchType,
+    });
     const body = await this.fetcher(apiUrl, signal);
     return parseDorarApiResponse(body);
   }
@@ -235,12 +298,9 @@ export class DorarProvider implements HadithProvider {
     filter: FilterMode,
     startPage: number,
     signal?: AbortSignal,
-  ): Promise<{
-    items: HadithResult[];
-    rawCount: number;
-    lastPage: number;
-    hasMore: boolean;
-  }> {
+    searchType?: 'w' | 'a',
+    maxPages = MAX_BACKFILL_PAGES,
+  ): Promise<FetchBackfillResult> {
     const collected: HadithResult[] = [];
     const seenIds = new Set<string>();
     let rawCount = 0;
@@ -248,8 +308,14 @@ export class DorarProvider implements HadithProvider {
     let lastPage = startPage;
     let hasMore = false;
 
-    for (let step = 0; step < MAX_BACKFILL_PAGES; step++) {
-      const parsed = await this.fetchSinglePage(query, filter, currentPage, signal);
+    for (let step = 0; step < maxPages; step++) {
+      const parsed = await this.fetchSinglePage(
+        query,
+        filter,
+        currentPage,
+        signal,
+        searchType,
+      );
 
       rawCount += parsed.items.length;
       lastPage = currentPage;
@@ -293,85 +359,185 @@ export class DorarProvider implements HadithProvider {
     const cached = readLru(this.cache, cacheKey);
     if (cached) return cached;
 
-    // Proactive cleanup for stray standalone conjunctions ("و امامز" -> "امامز")
-    // and deterministic repeated-letter typos ("النارر" -> "النار")
-    let initialQuery = rawQuery;
-    let proactiveCorrectedFrom: string | undefined;
-    if (request.page === 1 && !request.forceExact) {
-      const stripped = stripDiacritics(rawQuery).trim();
-      const withoutConjunctions = stripStandaloneConjunctions(stripped);
-      const collapsed = collapseRepeatedChars(withoutConjunctions);
-      if (collapsed && collapsed !== stripped) {
-        initialQuery = collapsed;
-        proactiveCorrectedFrom = rawQuery;
-      }
+    if (request.page > 1 || request.forceExact) {
+      const directPass = await this.fetchWithBackfill(
+        rawQuery,
+        request.filter,
+        request.page,
+        request.signal,
+      );
+      const directResult: SearchResponse = {
+        items: directPass.items,
+        page: directPass.lastPage,
+        hasMore: directPass.hasMore,
+        effectiveQuery: rawQuery,
+        suggestions: [],
+      };
+      writeLru(this.cache, cacheKey, directResult, CACHE_MAX_ENTRIES);
+      return directResult;
     }
 
-    const firstPass = await this.fetchWithBackfill(
-      initialQuery,
-      request.filter,
-      request.page,
-      request.signal,
-    );
+    const tried = new Set<string>();
+    const runAttempt = async (
+      query: string,
+      searchType: 'w' | 'a' = 'w',
+      maxPages = MAX_BACKFILL_PAGES,
+    ): Promise<FetchBackfillResult | null> => {
+      const normalized = query.trim();
+      if (!normalized) return null;
+      const attemptKey = `${searchType}|${normalized}`;
+      if (tried.has(attemptKey)) return null;
+      tried.add(attemptKey);
+      return this.fetchWithBackfill(
+        normalized,
+        request.filter,
+        1,
+        request.signal,
+        searchType,
+        maxPages,
+      );
+    };
 
-    if (firstPass.rawCount > 0 || request.page > 1 || request.forceExact) {
-      const result: SearchResponse = {
+    const cacheAndReturn = (response: SearchResponse): SearchResponse => {
+      writeLru(this.cache, cacheKey, response, CACHE_MAX_ENTRIES);
+      return response;
+    };
+
+    // Stage 0: Fast deterministic cleanup & guarded keyboard rescue
+    const proactive = prepareProactiveQuery(rawQuery);
+    const initialQuery = proactive.changed ? proactive.query : rawQuery;
+    const proactiveCorrectedFrom = proactive.changed ? rawQuery : undefined;
+
+    const firstPass = await runAttempt(initialQuery, 'w');
+    if (firstPass && firstPass.rawCount > 0) {
+      return cacheAndReturn({
         items: firstPass.items,
         page: firstPass.lastPage,
         hasMore: firstPass.hasMore,
         effectiveQuery: initialQuery,
         correctedFrom: proactiveCorrectedFrom,
+        recoveryMode: proactiveCorrectedFrom ? 'typo' : undefined,
         suggestions: [],
-      };
-      writeLru(this.cache, cacheKey, result, CACHE_MAX_ENTRIES);
-      return result;
+      });
     }
 
-    // Zero results on page 1 -> attempt forgiving fuzzy Arabic vocabulary recovery (e.g. الناور -> النار)
+    // Stages 1–4 strictly share a 3-attempt fallback budget
+    let fallbackBudget = 3;
     const suggestion = suggestArabicQuery(initialQuery);
-    if (!suggestion.changed || suggestion.correctedQuery === initialQuery) {
-      const emptyResult: SearchResponse = {
-        items: [],
-        page: request.page,
-        hasMore: false,
-        effectiveQuery: rawQuery,
-        suggestions: suggestion.alternatives,
-      };
-      writeLru(this.cache, cacheKey, emptyResult, CACHE_MAX_ENTRIES);
-      return emptyResult;
+    const bestSpellQuery = suggestion.changed ? suggestion.correctedQuery : initialQuery;
+
+    // Stage 1: Weighted Arabic spell-correction
+    if (fallbackBudget > 0 && suggestion.changed && suggestion.correctedQuery !== initialQuery) {
+      const spellPass = await runAttempt(suggestion.correctedQuery, 'w');
+      if (spellPass !== null) fallbackBudget -= 1;
+      if (spellPass && spellPass.rawCount > 0) {
+        return cacheAndReturn({
+          items: spellPass.items,
+          page: spellPass.lastPage,
+          hasMore: spellPass.hasMore,
+          effectiveQuery: suggestion.correctedQuery,
+          correctedFrom: rawQuery,
+          recoveryMode: 'typo',
+          suggestions: suggestion.alternatives.filter(
+            (alt) => alt !== suggestion.correctedQuery,
+          ),
+        });
+      }
+
+      const wordCount = initialQuery.split(/\s+/).filter(Boolean).length;
+      const alt2 = suggestion.alternatives.find(
+        (alt) => alt !== suggestion.correctedQuery && alt !== initialQuery,
+      );
+      if (wordCount === 1 && fallbackBudget > 0 && alt2) {
+        const altPass = await runAttempt(alt2, 'w');
+        if (altPass !== null) fallbackBudget -= 1;
+        if (altPass && altPass.rawCount > 0) {
+          return cacheAndReturn({
+            items: altPass.items,
+            page: altPass.lastPage,
+            hasMore: altPass.hasMore,
+            effectiveQuery: alt2,
+            correctedFrom: rawQuery,
+            recoveryMode: 'typo',
+            suggestions: suggestion.alternatives.filter((alt) => alt !== alt2),
+          });
+        }
+      }
     }
 
-    const recoveredPass = await this.fetchWithBackfill(
-      suggestion.correctedQuery,
-      request.filter,
-      1,
-      request.signal,
-    );
-
-    if (recoveredPass.rawCount > 0) {
-      const recoveredResult: SearchResponse = {
-        items: recoveredPass.items,
-        page: recoveredPass.lastPage,
-        hasMore: recoveredPass.hasMore,
-        effectiveQuery: suggestion.correctedQuery,
-        correctedFrom: rawQuery,
-        suggestions: suggestion.alternatives.filter(
-          (alt) => alt !== suggestion.correctedQuery,
-        ),
-      };
-      writeLru(this.cache, cacheKey, recoveredResult, CACHE_MAX_ENTRIES);
-      return recoveredResult;
+    // Stage 2: Conversational filler stripping
+    const stripped = stripQueryFillers(bestSpellQuery);
+    if (fallbackBudget > 0 && stripped && stripped !== bestSpellQuery) {
+      const strippedPass = await runAttempt(stripped, 'w');
+      if (strippedPass !== null) fallbackBudget -= 1;
+      if (strippedPass && strippedPass.rawCount > 0) {
+        return cacheAndReturn({
+          items: strippedPass.items,
+          page: strippedPass.lastPage,
+          hasMore: strippedPass.hasMore,
+          effectiveQuery: stripped,
+          correctedFrom: rawQuery,
+          recoveryMode: 'relaxed',
+          suggestions: suggestion.alternatives.filter((alt) => alt !== stripped),
+        });
+      }
     }
 
-    const fallbackEmpty: SearchResponse = {
+    // Stage 3: Relaxed any-word (st=a) + local fuzzy/proximity re-ranker
+    const baseForRelaxed =
+      stripped && stripped !== initialQuery ? stripped : bestSpellQuery;
+    const relaxedQuery = buildRelaxedSurfaceQuery(baseForRelaxed);
+    if (fallbackBudget > 0 && relaxedQuery) {
+      const relaxedPass = await runAttempt(relaxedQuery, 'a', 1);
+      if (relaxedPass !== null) fallbackBudget -= 1;
+      if (relaxedPass && relaxedPass.items.length > 0) {
+        const reranked = rerankRelaxedResults(relaxedPass.items, rawQuery);
+        if (reranked.items.length > 0) {
+          const effectiveQuery = reranked.recoveredQuery || relaxedQuery;
+          return cacheAndReturn({
+            items: reranked.items,
+            page: 1,
+            hasMore: false,
+            effectiveQuery,
+            correctedFrom: rawQuery,
+            recoveryMode: reranked.recoveredQuery ? 'typo' : 'relaxed',
+            suggestions: suggestion.alternatives.filter((alt) => alt !== effectiveQuery),
+          });
+        }
+      }
+    }
+
+    // Stage 4: Curated modern-to-classical Hadith concept mapping
+    const concepts = findConceptExpansions(initialQuery);
+    if (fallbackBudget > 0 && concepts.length > 0) {
+      const conceptPass = await runAttempt(concepts[0], 'w');
+      if (conceptPass !== null) fallbackBudget -= 1;
+      if (conceptPass && conceptPass.rawCount > 0) {
+        return cacheAndReturn({
+          items: conceptPass.items,
+          page: conceptPass.lastPage,
+          hasMore: conceptPass.hasMore,
+          effectiveQuery: concepts[0],
+          correctedFrom: rawQuery,
+          recoveryMode: 'concept',
+          suggestions: concepts.slice(1),
+        });
+      }
+    }
+
+    const combinedSuggestions = Array.from(
+      new Set([...suggestion.alternatives, ...concepts]),
+    )
+      .filter((s) => s !== rawQuery)
+      .slice(0, 3);
+
+    return cacheAndReturn({
       items: [],
       page: 1,
       hasMore: false,
       effectiveQuery: rawQuery,
-      suggestions: suggestion.alternatives,
-    };
-    writeLru(this.cache, cacheKey, fallbackEmpty, CACHE_MAX_ENTRIES);
-    return fallbackEmpty;
+      suggestions: combinedSuggestions,
+    });
   }
 
   async fetchOsoul(dorarId: string, signal?: AbortSignal): Promise<OsoulEntry[]> {

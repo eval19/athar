@@ -45,6 +45,8 @@ export interface AppStrings {
   endOfResults: string;
   resultsCount: (count: number, hasMore: boolean) => string;
   correctedBanner: (effective: string, original: string) => string;
+  relaxedBanner: (effective: string, original: string) => string;
+  conceptBanner: (effective: string, original: string) => string;
   searchExactInstead: (original: string) => string;
   didYouMean: string;
   recentSearches: string;
@@ -220,6 +222,10 @@ const AR_STRINGS: AppStrings = {
   },
   correctedBanner: (effective, original) =>
     `عرض النتائج لكلمة «${effective}» بدلًا من «${original}»`,
+  relaxedBanner: (effective, original) =>
+    `أقرب النتائج المطابقة لـ «${original}» (بحثًا عن: «${effective}»)`,
+  conceptBanner: (effective, original) =>
+    `لم يرد لفظ «${original}» حرفيًا في نص الحديث — عرض أحاديث في نفس المعنى («${effective}»)`,
   searchExactInstead: (original) => `ابحث عن «${original}» كما كُتبت`,
   didYouMean: 'هل تقصد:',
   recentSearches: 'عمليات البحث الأخيرة',
@@ -398,6 +404,10 @@ const EN_STRINGS: AppStrings = {
   },
   correctedBanner: (effective, original) =>
     `Showing results for "${effective}" instead of "${original}"`,
+  relaxedBanner: (effective, original) =>
+    `Closest matching hadiths for "${original}" (matching: "${effective}")`,
+  conceptBanner: (effective, original) =>
+    `"${original}" was not found verbatim — showing related hadiths for "${effective}"`,
   searchExactInstead: (original) => `Search "${original}" as typed`,
   didYouMean: 'Did you mean:',
   recentSearches: 'Recent searches',
