@@ -32,11 +32,33 @@ export function useHadithSearch() {
   const filterRef = useRef<FilterMode>(filter);
   const inputRef = useRef(inputValue);
   const skipNextDebounceRef = useRef(false);
+  const debounceTimerRef = useRef<number | null>(null);
+  const idleRecoveryTimerRef = useRef<number | null>(null);
+  const runSearchRef = useRef<
+    (
+      queryText: string,
+      filterMode: FilterMode,
+      pageNum: number,
+      options?: { append?: boolean; forceExact?: boolean; liveExact?: boolean },
+    ) => Promise<void>
+  >(async () => undefined);
 
   filterRef.current = filter;
   inputRef.current = inputValue;
 
+  const clearPendingTimers = useCallback(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (idleRecoveryTimerRef.current !== null) {
+      window.clearTimeout(idleRecoveryTimerRef.current);
+      idleRecoveryTimerRef.current = null;
+    }
+  }, []);
+
   const resetResults = useCallback(() => {
+    clearPendingTimers();
     abortRef.current?.abort();
     setActiveQuery('');
     setEffectiveQuery('');
@@ -48,15 +70,16 @@ export function useHadithSearch() {
     setHasError(false);
     setIsLoading(false);
     setIsLoadingMore(false);
-  }, []);
+  }, [clearPendingTimers]);
 
   const executeSearch = useCallback(
     async (
       queryText: string,
       filterMode: FilterMode,
       pageNum: number,
-      options: { append?: boolean; forceExact?: boolean } = {},
+      options: { append?: boolean; forceExact?: boolean; liveExact?: boolean } = {},
     ) => {
+      clearPendingTimers();
       const trimmed = queryText.trim();
       if (trimmed.length < 2) {
         resetResults();
@@ -76,16 +99,29 @@ export function useHadithSearch() {
         setActiveQuery(trimmed);
       }
 
+      let deferLoadingClear = false;
+
       try {
         const res = await provider.search({
           query: trimmed,
           filter: filterMode,
           page: pageNum,
-          forceExact: options.forceExact,
+          forceExact: options.forceExact || options.liveExact,
           signal: controller.signal,
         });
 
         if (seq !== requestSeqRef.current) return;
+
+        // While typing, keep exact misses calm without flashing an empty screen or
+        // rewriting mid-word (e.g. الصلا -> الصلة); upgrade to full recovery once idle.
+        if (!options.append && options.liveExact && res.items.length === 0) {
+          deferLoadingClear = true;
+          idleRecoveryTimerRef.current = window.setTimeout(() => {
+            idleRecoveryTimerRef.current = null;
+            void runSearchRef.current(trimmed, filterMode, 1);
+          }, 650);
+          return;
+        }
 
         if (options.append) {
           setItems((prev) => {
@@ -115,34 +151,43 @@ export function useHadithSearch() {
         setHasError(true);
       } finally {
         if (seq === requestSeqRef.current) {
-          setIsLoading(false);
+          if (!deferLoadingClear) {
+            setIsLoading(false);
+          }
           setIsLoadingMore(false);
         }
       }
     },
-    [resetResults],
+    [clearPendingTimers, resetResults],
   );
 
-  // Debounced live search strictly for typing (320ms); filter tabs & explicit clicks execute at 0ms
+  runSearchRef.current = executeSearch;
+
+  // Live typing uses calm exact-only debounce (420ms); full recovery fires on submit or +650ms idle.
   useEffect(() => {
+    clearPendingTimers();
     const trimmed = inputValue.trim();
     if (trimmed.length === 0) {
       resetResults();
       return;
     }
-    if (trimmed.length < 2) return;
+    if (trimmed.length < 2) {
+      setIsLoading(false);
+      return;
+    }
 
     if (skipNextDebounceRef.current) {
       skipNextDebounceRef.current = false;
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      void executeSearch(trimmed, filterRef.current, 1);
-    }, 320);
+    debounceTimerRef.current = window.setTimeout(() => {
+      debounceTimerRef.current = null;
+      void executeSearch(trimmed, filterRef.current, 1, { liveExact: true });
+    }, 420);
 
-    return () => window.clearTimeout(timer);
-  }, [inputValue, executeSearch, resetResults]);
+    return () => clearPendingTimers();
+  }, [inputValue, executeSearch, resetResults, clearPendingTimers]);
 
   const handleSetFilter = useCallback(
     (nextFilter: FilterMode) => {

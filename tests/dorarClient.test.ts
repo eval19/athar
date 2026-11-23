@@ -508,4 +508,42 @@ describe('DorarProvider smart typo recovery', () => {
     expect(res.correctedFrom).toBe('فمن كانت هحىته الى الله');
     expect(res.recoveryMode).toBe('typo');
   });
+
+  it('reuses a cached empty forceExact lookup so idle recovery skips repeating Stage 0', async () => {
+    const requestedUrls: string[] = [];
+    const fakeFetch: HttpFetchFn = async (url) => {
+      requestedUrls.push(url);
+      if (new URL(url).searchParams.get('skey') === 'النار') {
+        return VALID_NAR_BODY;
+      }
+      return EMPTY_BODY;
+    };
+
+    const provider = new DorarProvider({
+      endpoint: 'https://dorar.net/dorar_api.json',
+      fetcher: fakeFetch,
+    });
+
+    // Step 1: live-typing exact search finds 0 results (1 HTTP request)
+    const exactRes = await provider.search({
+      query: 'الناور',
+      filter: 'all',
+      page: 1,
+      forceExact: true,
+    });
+    expect(exactRes.items).toEqual([]);
+    expect(requestedUrls).toHaveLength(1);
+
+    // Step 2: idle recovery reuses the cached Stage 0 miss and jumps straight to Stage 1 (only 1 more request)
+    const recovered = await provider.search({
+      query: 'الناور',
+      filter: 'all',
+      page: 1,
+      forceExact: false,
+    });
+    expect(requestedUrls).toHaveLength(2);
+    expect(recovered.effectiveQuery).toBe('النار');
+    expect(recovered.correctedFrom).toBe('الناور');
+    expect(recovered.items).toHaveLength(1);
+  });
 });

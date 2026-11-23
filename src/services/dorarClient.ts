@@ -19,8 +19,12 @@ import {
   isUnauthenticBucket,
 } from '../domain/gradeClassifier';
 import { groupDuplicateHadiths } from '../domain/groupHadiths';
+import {
+  learnConfirmedQueryWords,
+  learnWordsFromTexts,
+} from '../domain/learnedVocab';
 import { rerankRelaxedResults } from '../domain/resultRerank';
-import { prepareProactiveQuery, suggestArabicQuery } from '../domain/typoSuggest';
+import { analyzeArabicQuery, prepareProactiveQuery } from '../domain/typoSuggest';
 import type {
   FilterMode,
   HadithResult,
@@ -242,6 +246,7 @@ export class DorarProvider implements HadithProvider {
   private readonly useRichWebSearch: boolean;
   private readonly fetcher: HttpFetchFn;
   private readonly cache = new Map<string, CacheEntry<SearchResponse>>();
+  private readonly emptyExactKeys = new Set<string>();
   private readonly osoulCache = new Map<string, CacheEntry<OsoulEntry[]>>();
   private readonly relatedCache = new Map<string, CacheEntry<HadithResult[]>>();
 
@@ -366,6 +371,24 @@ export class DorarProvider implements HadithProvider {
         request.page,
         request.signal,
       );
+      if (request.forceExact && request.page === 1) {
+        const exactKey = `${rawQuery}|${request.filter}`;
+        if (directPass.rawCount === 0) {
+          if (this.emptyExactKeys.size >= CACHE_MAX_ENTRIES) {
+            const oldest = this.emptyExactKeys.values().next().value;
+            if (oldest !== undefined) this.emptyExactKeys.delete(oldest);
+          }
+          this.emptyExactKeys.add(exactKey);
+        } else {
+          this.emptyExactKeys.delete(exactKey);
+        }
+      }
+      if (directPass.items.length > 0) {
+        learnWordsFromTexts(directPass.items.map((item) => item.text));
+        if (request.forceExact && request.page === 1) {
+          learnConfirmedQueryWords(rawQuery);
+        }
+      }
       const directResult: SearchResponse = {
         items: directPass.items,
         page: directPass.lastPage,
@@ -399,6 +422,9 @@ export class DorarProvider implements HadithProvider {
     };
 
     const cacheAndReturn = (response: SearchResponse): SearchResponse => {
+      if (response.items.length > 0) {
+        learnWordsFromTexts(response.items.map((item) => item.text));
+      }
       writeLru(this.cache, cacheKey, response, CACHE_MAX_ENTRIES);
       return response;
     };
@@ -407,6 +433,17 @@ export class DorarProvider implements HadithProvider {
     const proactive = prepareProactiveQuery(rawQuery);
     const initialQuery = proactive.changed ? proactive.query : rawQuery;
     const proactiveCorrectedFrom = proactive.changed ? rawQuery : undefined;
+
+    // Reuse a fresh live-typing exact search cache to avoid repeating Stage 0's HTTP fetch
+    if (initialQuery === rawQuery) {
+      const exactCached = readLru(this.cache, `${rawQuery}|${request.filter}|1|true`);
+      if (exactCached) {
+        if (!this.emptyExactKeys.has(`${rawQuery}|${request.filter}`)) {
+          return cacheAndReturn(exactCached);
+        }
+        tried.add(`w|${initialQuery}`);
+      }
+    }
 
     const firstPass = await runAttempt(initialQuery, 'w');
     if (firstPass && firstPass.rawCount > 0) {
@@ -423,10 +460,15 @@ export class DorarProvider implements HadithProvider {
 
     // Stages 1–4 strictly share a 3-attempt fallback budget
     let fallbackBudget = 3;
-    const suggestion = suggestArabicQuery(initialQuery);
+    const suggestion = analyzeArabicQuery(initialQuery);
+    const wordCount = initialQuery.split(/\s+/).filter(Boolean).length;
+    const shouldRunStage1 =
+      suggestion.changed &&
+      suggestion.correctedQuery !== initialQuery &&
+      (wordCount < 3 || suggestion.changedWordCount <= 1 || suggestion.maxEditCost <= 0.55);
 
-    // Stage 1: Weighted Arabic spell-correction
-    if (fallbackBudget > 0 && suggestion.changed && suggestion.correctedQuery !== initialQuery) {
+    // Stage 1: Weighted Arabic spell-correction (smart-routed for multi-word confidence)
+    if (fallbackBudget > 0 && shouldRunStage1) {
       const spellPass = await runAttempt(suggestion.correctedQuery, 'w');
       if (spellPass !== null) fallbackBudget -= 1;
       if (spellPass && spellPass.rawCount > 0) {
@@ -443,7 +485,6 @@ export class DorarProvider implements HadithProvider {
         });
       }
 
-      const wordCount = initialQuery.split(/\s+/).filter(Boolean).length;
       const alt2 = suggestion.alternatives.find(
         (alt) => alt !== suggestion.correctedQuery && alt !== initialQuery,
       );

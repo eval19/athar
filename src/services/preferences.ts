@@ -10,29 +10,33 @@ export const STORAGE_KEYS = {
   readingScale: 'athar:reading-scale',
   recentSearches: 'athar:recent-searches',
   gradeHint: 'athar:grade-hint',
+  learnedWords: 'athar:learned-words',
 } as const;
 
 const MAX_RECENT = 6;
 
 function safeGet(key: string): string | null {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return null;
   try {
-    return localStorage.getItem(key);
+    return window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
 function safeSet(key: string, value: string): void {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return;
   try {
-    localStorage.setItem(key, value);
+    window.localStorage.setItem(key, value);
   } catch {
     // Storage may be unavailable; continue cleanly in-memory
   }
 }
 
 function safeRemove(key: string): void {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return;
   try {
-    localStorage.removeItem(key);
+    window.localStorage.removeItem(key);
   } catch {
     // Ignore storage errors
   }
@@ -134,4 +138,18 @@ export function loadGradeHintState(): GradeHintState {
 
 export function saveGradeHintState(state: GradeHintState): void {
   safeSet(STORAGE_KEYS.gradeHint, JSON.stringify(state));
+}
+
+export function loadLearnedWords(): string[] {
+  const raw = safeGet(STORAGE_KEYS.learnedWords);
+  if (!raw) return [];
+  return raw.split(/\s+/).filter((word) => word.length >= 3);
+}
+
+export function saveLearnedWords(words: string[]): void {
+  if (words.length === 0) {
+    safeRemove(STORAGE_KEYS.learnedWords);
+    return;
+  }
+  safeSet(STORAGE_KEYS.learnedWords, words.join(' '));
 }

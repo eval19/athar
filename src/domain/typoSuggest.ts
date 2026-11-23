@@ -15,11 +15,17 @@ import {
   ARABIC_HADITH_CONCEPTS,
   ARABIC_HADITH_VOCAB,
 } from './arabicVocab';
+import { hasLearnedExactWord } from './learnedVocab';
 
 export interface TypoSuggestionResult {
   correctedQuery: string;
   changed: boolean;
   alternatives: string[];
+}
+
+export interface TypoAnalysisResult extends TypoSuggestionResult {
+  changedWordCount: number;
+  maxEditCost: number;
 }
 
 export interface ProactiveQueryResult {
@@ -221,6 +227,10 @@ function substitutionCost(a: string, b: string, isFinalPosition: boolean): numbe
 
 function indelCost(str: string, oneBasedIdx: number): number {
   const ch = str[oneBasedIdx - 1];
+  // Dropped final hamza after alef (e.g. الحيا -> الحياء, الدعا -> الدعاء, الما -> الماء)
+  if (ch === 'ء' && oneBasedIdx === str.length && oneBasedIdx > 1 && str[oneBasedIdx - 2] === 'ا') {
+    return 0.25;
+  }
   if (oneBasedIdx > 1 && str[oneBasedIdx - 2] === ch) {
     return 0.4;
   }
@@ -266,7 +276,7 @@ export function weightedArabicDistance(a: string, b: string): number {
       );
 
       if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-        best = Math.min(best, dp[i - 2][j - 2] + 0.55);
+        best = Math.min(best, dp[i - 2][j - 2] + 0.4);
       }
 
       dp[i][j] = best;
@@ -376,11 +386,20 @@ function lookupExactDisplay(rawWord: string, index: VocabIndex): string | null {
   const direct = index.exactMap.get(normFull);
   if (direct) return direct;
 
-  // Prefix-only (allows 2-letter stems like بالحق, والبر)
+  // Prefix-only (allows 2-letter stems like بالحق, والبر).
+  // Skip when definite article attaches to a bare '-ا' verb whose '-اء' noun exists
+  // (e.g. الدعا -> الدعاء, الرجا -> الرجاء) so dropped final hamza recovers properly.
   const { prefix, stem: afterPrefix } = splitArabicPrefix(cleaned, 2);
   if (prefix) {
-    const stemHit = index.exactMap.get(normalizeArabic(afterPrefix));
-    if (stemHit) return reattachPrefix(prefix, stemHit);
+    const normAfter = normalizeArabic(afterPrefix);
+    const isDroppedFinalHamzaNoun =
+      prefix.endsWith('ال') &&
+      afterPrefix.endsWith('ا') &&
+      index.exactMap.has(`${normAfter}ء`);
+    if (!isDroppedFinalHamzaNoun) {
+      const stemHit = index.exactMap.get(normAfter);
+      if (stemHit) return reattachPrefix(prefix, stemHit);
+    }
   }
 
   // Suffix-only
@@ -408,8 +427,62 @@ function lookupExactDisplay(rawWord: string, index: VocabIndex): string | null {
   return null;
 }
 
+const VERB_PREFIX_CHARS = new Set(['ي', 'ت', 'ن', 'أ', 'ا']);
+const VERB_SUFFIXES = ['ون', 'ين', 'ان', 'وا', 'ها', 'هم', 'كم', 'نا', 'ني', 'ه', 'ك', 'ي'] as const;
+
+function isImperfectOrImperativeVerbHit(cleaned: string, index: VocabIndex): boolean {
+  if (cleaned.length < 4) return false;
+  if (
+    cleaned.startsWith('ال') ||
+    cleaned.startsWith('وال') ||
+    cleaned.startsWith('بال') ||
+    cleaned.startsWith('فال') ||
+    cleaned.startsWith('كال') ||
+    cleaned.startsWith('لل')
+  ) {
+    return false;
+  }
+
+  let body = cleaned;
+  if ((body.startsWith('و') || body.startsWith('ف')) && body.length >= 5) {
+    body = body.slice(1);
+  }
+
+  if (!VERB_PREFIX_CHARS.has(body[0])) return false;
+  const rest = body.slice(1);
+  if (rest.length < 3) return false;
+
+  if (index.exactMap.has(normalizeArabic(rest))) return true;
+
+  for (const suffix of VERB_SUFFIXES) {
+    if (!rest.endsWith(suffix)) continue;
+    const baseLen = rest.length - suffix.length;
+    if (baseLen < 3) continue;
+    if (suffix === 'ه' && rest.endsWith('ة')) continue;
+    if (suffix === 'ي' && rest.endsWith('ى')) continue;
+
+    if (index.exactMap.has(normalizeArabic(rest.slice(0, baseLen)))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function isExactVocabHit(rawWord: string, index: VocabIndex): boolean {
-  return lookupExactDisplay(rawWord, index) !== null;
+  const cleaned = stripDiacritics(rawWord).trim();
+  if (!cleaned) return false;
+
+  if (lookupExactDisplay(cleaned, index) !== null) return true;
+  if (isImperfectOrImperativeVerbHit(cleaned, index)) return true;
+
+  const normFull = normalizeArabic(cleaned);
+  if (hasLearnedExactWord(normFull)) return true;
+
+  const { prefix, stem: afterPrefix } = splitArabicPrefix(cleaned, 3);
+  if (prefix && hasLearnedExactWord(normalizeArabic(afterPrefix))) return true;
+
+  return false;
 }
 
 function isVerifiedArabicKeyboardConversion(converted: string, index: VocabIndex): boolean {
@@ -498,8 +571,10 @@ function collectStemCandidates(
   index: VocabIndex,
   scored: ScoredCandidate[],
   seenBest: Map<string, number>,
+  maxCostCap?: number,
 ): void {
-  const maxCost = maxWeightedCostForLength(searchNorm.length);
+  const baseMax = maxWeightedCostForLength(searchNorm.length);
+  const maxCost = maxCostCap !== undefined ? Math.min(baseMax, maxCostCap) : baseMax;
   if (maxCost <= 0) return;
 
   const totalEntries = Math.max(1, index.entries.length);
@@ -539,8 +614,10 @@ function collectPrefixedAlCandidates(
   index: VocabIndex,
   scored: ScoredCandidate[],
   seenBest: Map<string, number>,
+  maxCostCap?: number,
 ): void {
-  const maxCost = maxWeightedCostForLength(normFull.length);
+  const baseMax = maxWeightedCostForLength(normFull.length);
+  const maxCost = maxCostCap !== undefined ? Math.min(baseMax, maxCostCap) : baseMax;
   if (maxCost <= 0) return;
 
   const totalEntries = Math.max(1, index.entries.length);
@@ -600,18 +677,26 @@ export function prepareProactiveQuery(rawQuery: string): ProactiveQueryResult {
   };
 }
 
+interface SingleWordSuggestion {
+  best: string;
+  changed: boolean;
+  dist: number;
+  candidates: string[];
+}
+
 function suggestSingleWord(
   rawWord: string,
   index: VocabIndex,
-): { best: string; changed: boolean; candidates: string[] } {
+  inMultiWordSentence: boolean,
+): SingleWordSuggestion {
   const cleaned = stripDiacritics(rawWord).trim();
   if (cleaned.length < 3) {
-    return { best: cleaned, changed: false, candidates: [] };
+    return { best: cleaned, changed: false, dist: 0, candidates: [] };
   }
 
-  // 1. Exact vocabulary / morphology hit (never rewrite valid Arabic words)
+  // 1. Exact vocabulary, verb morphology, or learned exact-word shield hit
   if (isExactVocabHit(cleaned, index)) {
-    return { best: cleaned, changed: false, candidates: [] };
+    return { best: cleaned, changed: false, dist: 0, candidates: [] };
   }
 
   // 2. Deterministic repeated-char collapse (check exact match after collapsing)
@@ -620,7 +705,13 @@ function suggestSingleWord(
   const wasCollapsed = working !== cleaned;
 
   if (wasCollapsed && isExactVocabHit(working, index)) {
-    return { best: working, changed: true, candidates: [working] };
+    return { best: working, changed: true, dist: 0, candidates: [working] };
+  }
+
+  // 2b. Dropped silent alif on plural verbs (e.g. يسرو -> يسروا, ارحمو -> ارحموا)
+  if (working.endsWith('و') && working.length >= 4 && isExactVocabHit(`${working}ا`, index)) {
+    const restored = `${working}ا`;
+    return { best: restored, changed: true, dist: 0.25, candidates: [restored] };
   }
 
   const normFull = normalizeArabic(working);
@@ -629,14 +720,27 @@ function suggestSingleWord(
   const activePrefix = prefix && normAfterPrefix.length >= 3 ? prefix : '';
   const searchNorm = activePrefix ? normAfterPrefix : normFull;
 
+  // Inside multi-word sentences, prevent loose keyboard-only rewrites on 3-letter words
+  // (e.g. شطر -> شكر) while preserving phonetic/hamza/vowel fixes (e.g. الحيا -> الحياء).
+  const shortWordCap = inMultiWordSentence && searchNorm.length === 3 ? 0.45 : undefined;
+
   // 3. Weighted phonetic/keyboard fuzzy search over index
   const scored: ScoredCandidate[] = [];
   const seenBest = new Map<string, number>();
 
-  collectStemCandidates(searchNorm, activePrefix, '', 0, index, scored, seenBest);
+  collectStemCandidates(
+    searchNorm,
+    activePrefix,
+    '',
+    0,
+    index,
+    scored,
+    seenBest,
+    shortWordCap,
+  );
 
   if (activePrefix === 'ال' || normFull.startsWith('ا')) {
-    collectPrefixedAlCandidates(normFull, index, scored, seenBest);
+    collectPrefixedAlCandidates(normFull, index, scored, seenBest, shortWordCap);
   }
 
   // Check suffixed stem fuzzy recovery (e.g. صالتكم -> صلاتكم, هحىته -> هجرته)
@@ -678,15 +782,15 @@ function suggestSingleWord(
           top.push(item.display);
         }
       }
-      return { best: splitPair, changed: true, candidates: top };
+      return { best: splitPair, changed: true, dist: 0.25, candidates: top };
     }
   }
 
   if (scored.length === 0) {
     if (wasCollapsed) {
-      return { best: working, changed: true, candidates: [working] };
+      return { best: working, changed: true, dist: 0, candidates: [working] };
     }
-    return { best: cleaned, changed: false, candidates: [] };
+    return { best: cleaned, changed: false, dist: 0, candidates: [] };
   }
 
   // Deduplicate keeping best score order
@@ -699,17 +803,23 @@ function suggestSingleWord(
     if (uniqueTop.length >= 3) break;
   }
 
-  return { best: uniqueTop[0], changed: true, candidates: uniqueTop };
+  return { best: uniqueTop[0], changed: true, dist: bestDist, candidates: uniqueTop };
 }
 
 /**
- * Generates deterministic proactive fixes plus weighted Arabic spell corrections
- * and ranked alternative queries.
+ * Runs proactive cleanup plus weighted Arabic spell analysis with multi-word
+ * restraint, exposing edit-count and max-cost confidence metrics for routing.
  */
-export function suggestArabicQuery(query: string): TypoSuggestionResult {
+export function analyzeArabicQuery(query: string): TypoAnalysisResult {
   const trimmed = query.trim();
   if (!trimmed) {
-    return { correctedQuery: '', changed: false, alternatives: [] };
+    return {
+      correctedQuery: '',
+      changed: false,
+      alternatives: [],
+      changedWordCount: 0,
+      maxEditCost: 0,
+    };
   }
 
   const index = getIndex();
@@ -717,16 +827,40 @@ export function suggestArabicQuery(query: string): TypoSuggestionResult {
   const workingQuery = proactive.changed ? proactive.query : stripDiacritics(trimmed).trim();
 
   const words = workingQuery.split(/\s+/).filter(Boolean);
+  const isMultiWordSentence = words.length >= 3;
+  const wordResults = words.map((w) => suggestSingleWord(w, index, isMultiWordSentence));
+
+  // Multi-word restraint: in 3+ word sentences, never apply multiple loose (> 0.55)
+  // fuzzy guesses at once; preserve tight fixes and let Stage 3 st=a handle the rest.
+  if (isMultiWordSentence) {
+    const looseCount = wordResults.filter((r) => r.changed && r.dist > 0.55).length;
+    if (looseCount >= 2) {
+      for (let i = 0; i < wordResults.length; i++) {
+        if (wordResults[i].changed && wordResults[i].dist > 0.55) {
+          wordResults[i] = {
+            best: words[i],
+            changed: false,
+            dist: 0,
+            candidates: [],
+          };
+        }
+      }
+    }
+  }
+
   const correctedWords: string[] = [];
   const perWordAlternatives: string[][] = [];
   let anyChanged = proactive.changed;
+  let changedWordCount = 0;
+  let maxEditCost = 0;
 
-  for (const w of words) {
-    const res = suggestSingleWord(w, index);
+  for (const res of wordResults) {
     correctedWords.push(res.best);
     perWordAlternatives.push(res.candidates);
     if (res.changed) {
       anyChanged = true;
+      changedWordCount++;
+      maxEditCost = Math.max(maxEditCost, res.dist);
     }
   }
 
@@ -754,5 +888,16 @@ export function suggestArabicQuery(query: string): TypoSuggestionResult {
     correctedQuery,
     changed,
     alternatives: alternatives.slice(0, 4),
+    changedWordCount,
+    maxEditCost,
   };
+}
+
+/**
+ * Generates deterministic proactive fixes plus weighted Arabic spell corrections
+ * and ranked alternative queries.
+ */
+export function suggestArabicQuery(query: string): TypoSuggestionResult {
+  const { correctedQuery, changed, alternatives } = analyzeArabicQuery(query);
+  return { correctedQuery, changed, alternatives };
 }
