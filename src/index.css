@@ -316,6 +316,15 @@ input[type='search']::-webkit-search-results-decoration {
   -webkit-box-decoration-break: clone;
 }
 
+/* Calm 7-line teaser clamp + CSS mask fade for truly long Hadiths (modern-web-guidance: teaser) */
+.matn-clamped {
+  overflow: hidden;
+  max-height: 14.5em;
+  overflow: clip;
+  max-block-size: calc(7lh + 0.25rem);
+  mask-image: linear-gradient(to top, transparent 0%, transparent 0.15lh, black 2.2lh);
+}
+
 /* Frosted glass backdrop for sticky search/filter dock (no dividing border line) */
 .sticky-dock-blur {
   background-color: var(--bg-dock);

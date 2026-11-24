@@ -1,7 +1,8 @@
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
   Check,
+  ChevronDown,
   ChevronUp,
   Copy,
   GitBranch,
@@ -15,6 +16,12 @@ import {
 import { findArabicHighlightSegments } from '../domain/arabicNormalize';
 import { isUnauthenticBucket } from '../domain/gradeClassifier';
 import type { GradeBucket, HadithResult, OsoulEntry, ReadingScale } from '../domain/hadith';
+import {
+  hasMatchOnlyBelowPreview,
+  MATN_CLEAR_VISIBLE_LINES,
+  MATN_MIN_LINES_TO_COLLAPSE,
+  shouldCollapseMatn,
+} from '../domain/matnCollapse';
 import type { AppStrings } from '../i18n/strings';
 import { GradeBadge } from './GradeBadge';
 
@@ -61,6 +68,9 @@ export const HadithCard = memo(function HadithCard({
 }: HadithCardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [showGradeHelp, setShowGradeHelp] = useState(false);
+  const [matnExpanded, setMatnExpanded] = useState(false);
+  const [fitsWithoutClamp, setFitsWithoutClamp] = useState(false);
+  const [measuredMatchBelow, setMeasuredMatchBelow] = useState<boolean | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [panelLoading, setPanelLoading] = useState(false);
   const [panelError, setPanelError] = useState(false);
@@ -68,12 +78,69 @@ export const HadithCard = memo(function HadithCard({
   const [altData, setAltData] = useState<HadithResult[] | null>(null);
   const [similarData, setSimilarData] = useState<HadithResult[] | null>(null);
   const panelSeqRef = useRef(0);
+  const articleRef = useRef<HTMLElement | null>(null);
+  const matnRef = useRef<HTMLParagraphElement | null>(null);
+  const matnId = useId();
 
   const segments = useMemo(
     () => findArabicHighlightSegments(hadith.text, highlightQuery),
     [hadith.text, highlightQuery],
   );
+  const isLongCandidate = useMemo(
+    () => shouldCollapseMatn(hadith.text, readingScale),
+    [hadith.text, readingScale],
+  );
+  const fallbackMatchBelow = useMemo(
+    () => (isLongCandidate ? hasMatchOnlyBelowPreview(segments, readingScale) : false),
+    [isLongCandidate, segments, readingScale],
+  );
+  const showMatnToggle = isLongCandidate && !fitsWithoutClamp;
+  const isMatnCollapsed = showMatnToggle && !matnExpanded;
+  const matchBelowPreview = measuredMatchBelow ?? fallbackMatchBelow;
   const gradeDef = strings.gradeDefinitions[hadith.gradeBucket];
+
+  useLayoutEffect(() => {
+    if (!isLongCandidate) {
+      setFitsWithoutClamp(false);
+      setMeasuredMatchBelow(null);
+      return;
+    }
+
+    const el = matnRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const fullHeight = el.getBoundingClientRect().height;
+      if (fullHeight === 0) return;
+      const lineHeight = Number.parseFloat(window.getComputedStyle(el).lineHeight);
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+
+      const fits = fullHeight < lineHeight * MATN_MIN_LINES_TO_COLLAPSE;
+      setFitsWithoutClamp(fits);
+
+      if (fits || matnExpanded || !segments.some((seg) => seg.match)) {
+        setMeasuredMatchBelow(false);
+        return;
+      }
+
+      const firstMark = el.querySelector('mark');
+      if (!firstMark) {
+        setMeasuredMatchBelow(false);
+        return;
+      }
+
+      const pTop = el.getBoundingClientRect().top;
+      const markTop = firstMark.getBoundingClientRect().top;
+      setMeasuredMatchBelow(markTop - pTop >= lineHeight * MATN_CLEAR_VISIBLE_LINES);
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isLongCandidate, segments, matnExpanded]);
 
   const otherBucketCounts = useMemo(() => {
     const bucketCountMap = new Map<GradeBucket, number>();
@@ -164,9 +231,23 @@ export const HadithCard = memo(function HadithCard({
     onGradeBadgeOpened?.();
   };
 
+  const handleToggleMatn = () => {
+    const collapsing = matnExpanded;
+    setMatnExpanded((prev) => !prev);
+    if (collapsing) {
+      window.requestAnimationFrame(() => {
+        const card = articleRef.current;
+        if (card && card.getBoundingClientRect().top < 120) {
+          card.scrollIntoView({ block: 'nearest' });
+        }
+      });
+    }
+  };
+
   return (
     <article
-      className={`hadith-sheet rounded-2xl bg-surface px-4 py-4 transition-colors sm:px-5 sm:py-5${
+      ref={articleRef}
+      className={`hadith-sheet scroll-mt-32 rounded-2xl bg-surface px-4 py-4 transition-colors sm:px-5 sm:py-5${
         deferred ? ' hadith-card-deferred' : ''
       }`}
     >
@@ -267,21 +348,55 @@ export const HadithCard = memo(function HadithCard({
       )}
 
       {/* Row 2: Hero Matn — always Arabic RTL for clean diacritic/punctuation shaping */}
-      <p
+      <div
         dir="rtl"
         lang="ar"
-        className={`font-hadith py-0.5 text-start text-ink ${MATN_SIZE_CLASS[readingScale]}`}
+        className={`font-hadith text-start text-ink ${MATN_SIZE_CLASS[readingScale]}${
+          isMatnCollapsed ? ' matn-clamped' : ''
+        }`}
       >
-        {segments.map((seg, idx) =>
-          seg.match ? (
-            <mark key={idx} className="hadith-mark">
-              {seg.text}
-            </mark>
-          ) : (
-            <span key={idx}>{seg.text}</span>
-          ),
-        )}
-      </p>
+        <p ref={matnRef} id={matnId} className="py-0.5">
+          {segments.map((seg, idx) =>
+            seg.match ? (
+              <mark key={idx} className="hadith-mark">
+                {seg.text}
+              </mark>
+            ) : (
+              <span key={idx}>{seg.text}</span>
+            ),
+          )}
+        </p>
+      </div>
+
+      {showMatnToggle && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <button
+            type="button"
+            aria-expanded={matnExpanded}
+            aria-controls={matnId}
+            onClick={handleToggleMatn}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              matnExpanded
+                ? 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
+                : 'bg-brand-soft text-brand hover:bg-elevated'
+            }`}
+          >
+            <span>{matnExpanded ? strings.showLessMatn : strings.showMoreMatn}</span>
+            {matnExpanded ? (
+              <ChevronUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+          </button>
+
+          {isMatnCollapsed && matchBelowPreview && (
+            <span className="inline-flex items-center gap-1.5 text-[0.72rem] font-medium text-muted">
+              <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+              <span>{strings.matchBelowPreview}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Row 3: Scholar-Attributed Verbatim Verdict + Source + Minimal Copy/Share Actions */}
       <div className="mt-4 border-t border-line pt-3">

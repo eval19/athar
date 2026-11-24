@@ -40,6 +40,9 @@ export interface AppStrings {
   copied: string;
   share: string;
   sharedCopiedFallback: string;
+  showMoreMatn: string;
+  showLessMatn: string;
+  matchBelowPreview: string;
   loadMore: string;
   loadingMore: string;
   endOfResults: string;
@@ -206,6 +209,9 @@ const AR_STRINGS: AppStrings = {
   copied: 'تم النسخ',
   share: 'مشاركة',
   sharedCopiedFallback: 'تم نسخ الحديث للمشاركة',
+  showMoreMatn: 'عرض المزيد',
+  showLessMatn: 'عرض أقل',
+  matchBelowPreview: 'الكلمة في بقية النص',
   loadMore: 'عرض المزيد من الأحاديث',
   loadingMore: 'جاري التحميل…',
   endOfResults: 'نهاية النتائج المتاحة',
@@ -395,6 +401,9 @@ const EN_STRINGS: AppStrings = {
   copied: 'Copied',
   share: 'Share',
   sharedCopiedFallback: 'Hadith copied to share',
+  showMoreMatn: 'Show more',
+  showLessMatn: 'Show less',
+  matchBelowPreview: 'Match further down',
   loadMore: 'Load more hadiths',
   loadingMore: 'Loading…',
   endOfResults: 'End of available results',
