@@ -369,13 +369,17 @@ export const HadithCard = memo(function HadithCard({
       </div>
 
       {showMatnToggle && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <div
+          className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 ${
+            matnExpanded ? 'mt-2.5' : 'mt-0.5'
+          }`}
+        >
           <button
             type="button"
             aria-expanded={matnExpanded}
             aria-controls={matnId}
             onClick={handleToggleMatn}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               matnExpanded
                 ? 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
                 : 'bg-brand-soft text-brand hover:bg-elevated'

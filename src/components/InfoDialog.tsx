@@ -181,7 +181,7 @@ export function InfoDialog({
             type="button"
             onClick={onClose}
             aria-label={strings.close}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-elevated hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="-me-1.5 inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -282,13 +282,13 @@ export function InfoDialog({
               {strings.appName} • {strings.aboutVersion}
             </p>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
               {availableUpdate ? (
                 <a
                   href={availableUpdate.downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-xs font-semibold text-brand-ink transition-opacity hover:opacity-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-xs font-semibold tabular-nums text-brand-ink transition-opacity hover:opacity-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <Download className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>
@@ -300,7 +300,7 @@ export function InfoDialog({
                   type="button"
                   onClick={onCheckForUpdates}
                   disabled={updateCheckStatus === 'checking'}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-elevated px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-subtle hover:text-ink active:scale-95 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-elevated px-3.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-subtle hover:text-ink active:scale-95 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {updateCheckStatus === 'checking' ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" aria-hidden="true" />

@@ -76,6 +76,7 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [pageScrolled, setPageScrolled] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(64);
   const headerWrapRef = useRef<HTMLDivElement | null>(null);
   const headerHeightRef = useRef(64);
@@ -281,6 +282,7 @@ export default function App() {
         });
         scrollHeaderRef.current = next;
         setHeaderHidden(next.hidden);
+        setPageScrolled(window.scrollY > 12);
       });
     };
 
@@ -295,8 +297,8 @@ export default function App() {
     <div className="min-h-dvh bg-canvas text-ink">
       <div
         className={`top-chrome-shell sticky top-0 z-20 sticky-dock-blur${
-          headerHidden ? ' top-chrome-collapsed' : ''
-        }`}
+          pageScrolled ? ' top-chrome-scrolled' : ''
+        }${headerHidden ? ' top-chrome-collapsed' : ''}`}
         style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
       >
         <div ref={headerWrapRef} onFocusCapture={revealHeader}>
@@ -345,7 +347,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => search.searchExact(search.correctedFrom!)}
-                    className="hadith-sheet rounded-full bg-surface px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-ink"
+                    className="hadith-sheet inline-flex min-h-9 items-center rounded-full bg-surface px-3.5 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-elevated active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     {strings.searchExactInstead(search.correctedFrom)}
                   </button>
@@ -356,7 +358,7 @@ export default function App() {
                       dir="rtl"
                       lang="ar"
                       onClick={() => search.selectQuery(alt)}
-                      className="hadith-sheet rounded-full bg-surface px-3 py-1 text-xs font-semibold text-brand transition-opacity hover:opacity-90"
+                      className="hadith-sheet inline-flex min-h-9 items-center rounded-full bg-surface px-3.5 py-1.5 text-xs font-semibold text-brand transition-opacity hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       {alt}
                     </button>

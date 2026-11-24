@@ -80,7 +80,7 @@ export function SearchBar({
         <button
           type="submit"
           disabled={value.trim().length < 2}
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-ink transition-opacity hover:opacity-95 active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-ink transition-colors hover:opacity-95 active:scale-[0.98] disabled:bg-elevated disabled:text-muted disabled:hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           {strings.searchButton}
         </button>
