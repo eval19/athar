@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Info, Loader2 } from 'lucide-react';
@@ -14,6 +14,12 @@ import type {
   ReadingScale,
   ThemePreference,
 } from './domain/hadith';
+import {
+  createScrollHeaderState,
+  HEADER_DEFAULT_HIDE_AFTER_Y,
+  type ScrollHeaderState,
+  stepScrollHeader,
+} from './domain/scrollHeader';
 import { useHadithSearch } from './hooks/useHadithSearch';
 import { getStrings } from './i18n/strings';
 import { syncNativeSystemBars } from './services/nativeChrome';
@@ -58,6 +64,18 @@ export default function App() {
   const sessionHintCheckedRef = useRef(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(64);
+  const headerWrapRef = useRef<HTMLDivElement | null>(null);
+  const headerHeightRef = useRef(64);
+  const scrollHeaderRef = useRef<ScrollHeaderState>(createScrollHeaderState(0));
+
+  const revealHeader = useCallback(() => {
+    scrollHeaderRef.current = createScrollHeaderState(
+      typeof window !== 'undefined' ? window.scrollY : 0,
+    );
+    setHeaderHidden(false);
+  }, []);
 
   const search = useHadithSearch();
   const strings = useMemo(() => getStrings(locale), [locale]);
@@ -169,17 +187,77 @@ export default function App() {
     setShowGradeHint(false);
   }, []);
 
+  useLayoutEffect(() => {
+    const el = headerWrapRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(el.getBoundingClientRect().height);
+      if (nextHeight > 0) {
+        headerHeightRef.current = nextHeight;
+        setHeaderHeight(nextHeight);
+      }
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (settingsOpen) {
+      revealHeader();
+      return;
+    }
+
+    let rafId = 0;
+
+    const handleScroll = () => {
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const next = stepScrollHeader(scrollHeaderRef.current, {
+          scrollY: window.scrollY,
+          viewportHeight: window.innerHeight,
+          documentHeight: document.documentElement.scrollHeight,
+          hideAfterY: Math.max(headerHeightRef.current, HEADER_DEFAULT_HIDE_AFTER_Y),
+        });
+        scrollHeaderRef.current = next;
+        setHeaderHidden(next.hidden);
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+    };
+  }, [settingsOpen, revealHeader]);
+
   return (
     <div className="min-h-dvh bg-canvas text-ink">
-      <Header
-        locale={locale}
-        strings={strings}
-        onToggleLocale={() => setLocale((prev) => (prev === 'ar' ? 'en' : 'ar'))}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onResetHome={search.resetHome}
-      />
+      <div
+        className={`top-chrome-shell sticky top-0 z-20 sticky-dock-blur${
+          headerHidden ? ' top-chrome-collapsed' : ''
+        }`}
+        style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
+      >
+        <div ref={headerWrapRef} onFocusCapture={revealHeader}>
+          <Header
+            locale={locale}
+            strings={strings}
+            onToggleLocale={() => setLocale((prev) => (prev === 'ar' ? 'en' : 'ar'))}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onResetHome={() => {
+              revealHeader();
+              search.resetHome();
+            }}
+          />
+        </div>
 
-      <div className="sticky top-0 z-20 sticky-dock-blur">
         <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2.5 pt-2">
           <SearchBar
             value={search.inputValue}

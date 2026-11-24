@@ -19,7 +19,7 @@ export function Header({
   onResetHome,
 }: HeaderProps) {
   return (
-    <header className="safe-pt safe-px bg-canvas">
+    <header className="safe-pt safe-px">
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 py-2">
         <button
           type="button"
