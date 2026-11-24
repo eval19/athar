@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 import type { AppStrings } from '../i18n/strings';
+import { MAX_QUERY_LENGTH } from '../services/dorarClient';
 
 interface SearchBarProps {
   value: string;
@@ -57,6 +58,7 @@ export function SearchBar({
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          maxLength={MAX_QUERY_LENGTH}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={strings.searchPlaceholder}

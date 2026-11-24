@@ -6,29 +6,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="light dark" />
     <link rel="preconnect" href="https://dorar.net" crossorigin />
     <link rel="dns-prefetch" href="https://dorar.net" />
-    <script>
-      try {
-        var savedScheme = localStorage.getItem('athar:color-scheme');
-        var meta = document.querySelector('meta[name="color-scheme"]');
-        if (meta) {
-          meta.content =
-            savedScheme === 'light' || savedScheme === 'dark'
-              ? savedScheme
-              : 'light dark';
-        }
-        if (savedScheme === 'light' || savedScheme === 'dark') {
-          document.documentElement.setAttribute('data-theme', savedScheme);
-        }
-        var savedLang = localStorage.getItem('athar:locale');
-        if (savedLang === 'en' || savedLang === 'ar') {
-          document.documentElement.lang = savedLang;
-          document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-        }
-      } catch (_) {}
-    </script>
+    <script src="/boot.js"></script>
     <meta
       name="description"
       content="أَثَر — بحث سريع وواضح في الأحاديث النبوية من الموسوعة الحديثية بالدرر السنية"

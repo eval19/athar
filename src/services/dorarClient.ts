@@ -47,6 +47,47 @@ export interface DorarProviderOptions {
 const DEFAULT_NATIVE_WEB_BASE = 'https://dorar.net';
 const DEFAULT_WEB_DEV_BASE = '/dorar-proxy';
 
+export const MAX_QUERY_LENGTH = 160;
+export const MAX_RESPONSE_CHARS = 2 * 1024 * 1024;
+const WEB_FETCH_TIMEOUT_MS = 15_000;
+const DORAR_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const ALLOWED_DORAR_HOSTS = new Set(['dorar.net', 'www.dorar.net']);
+
+export function isValidDorarId(dorarId: string): boolean {
+  return DORAR_ID_PATTERN.test(dorarId);
+}
+
+/**
+ * Enforces an explicit outbound host/scheme allowlist so client HTTP calls can
+ * only ever reach HTTPS dorar.net (or the local dev proxy path on web).
+ */
+export function assertAllowedDorarUrl(
+  url: string,
+  isNative = Capacitor.isNativePlatform(),
+): void {
+  if (!isNative && url.startsWith('/dorar-proxy/') && !url.startsWith('//')) {
+    return;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error('Blocked invalid outbound URL');
+  }
+
+  if (parsed.protocol !== 'https:' || !ALLOWED_DORAR_HOSTS.has(parsed.hostname)) {
+    throw new Error('Blocked disallowed outbound host');
+  }
+}
+
+function assertSafeResponseSize(body: string): string {
+  if (body.length > MAX_RESPONSE_CHARS) {
+    throw new Error('Dorar response exceeded safety limit');
+  }
+  return body;
+}
+
 const CACHE_MAX_ENTRIES = 30;
 const DETAIL_CACHE_MAX_ENTRIES = 40;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -112,6 +153,8 @@ export function buildDorarWebSearchUrl(
 }
 
 async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<string> {
+  assertAllowedDorarUrl(url);
+
   if (Capacitor.isNativePlatform()) {
     const response = await CapacitorHttp.get({
       url,
@@ -124,20 +167,34 @@ async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<stri
     if (response.status < 200 || response.status >= 300) {
       throw new Error(`Dorar API error (${response.status})`);
     }
-    return typeof response.data === 'string'
-      ? response.data
-      : JSON.stringify(response.data);
+    const text =
+      typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+    return assertSafeResponseSize(text);
   }
 
-  const res = await fetch(url, {
-    method: 'GET',
-    signal,
-    headers: { Accept: 'text/html, application/json, text/plain, */*' },
-  });
-  if (!res.ok) {
-    throw new Error(`Dorar API error (${res.status})`);
+  const timeoutController = new AbortController();
+  const timeoutId = globalThis.setTimeout(
+    () => timeoutController.abort(),
+    WEB_FETCH_TIMEOUT_MS,
+  );
+  const onExternalAbort = () => timeoutController.abort();
+  signal?.addEventListener('abort', onExternalAbort, { once: true });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: timeoutController.signal,
+      referrerPolicy: 'no-referrer',
+      headers: { Accept: 'text/html, application/json, text/plain, */*' },
+    });
+    if (!res.ok) {
+      throw new Error(`Dorar API error (${res.status})`);
+    }
+    return assertSafeResponseSize(await res.text());
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', onExternalAbort);
   }
-  return res.text();
 }
 
 function applyClientFilterRefinement(
@@ -349,7 +406,7 @@ export class DorarProvider implements HadithProvider {
   }
 
   async search(request: SearchRequest): Promise<SearchResponse> {
-    const rawQuery = request.query.trim();
+    const rawQuery = request.query.trim().slice(0, MAX_QUERY_LENGTH).trim();
     if (!rawQuery) {
       return {
         items: [],
@@ -582,6 +639,7 @@ export class DorarProvider implements HadithProvider {
   }
 
   async fetchOsoul(dorarId: string, signal?: AbortSignal): Promise<OsoulEntry[]> {
+    if (!isValidDorarId(dorarId)) return [];
     const cached = readLru(this.osoulCache, dorarId);
     if (cached) return cached;
 
@@ -593,6 +651,7 @@ export class DorarProvider implements HadithProvider {
   }
 
   async fetchAltSahih(dorarId: string, signal?: AbortSignal): Promise<HadithResult[]> {
+    if (!isValidDorarId(dorarId)) return [];
     const cacheKey = `alt:${dorarId}`;
     const cached = readLru(this.relatedCache, cacheKey);
     if (cached) return cached;
@@ -607,6 +666,7 @@ export class DorarProvider implements HadithProvider {
   }
 
   async fetchSimilar(dorarId: string, signal?: AbortSignal): Promise<HadithResult[]> {
+    if (!isValidDorarId(dorarId)) return [];
     const cacheKey = `sim:${dorarId}`;
     const cached = readLru(this.relatedCache, cacheKey);
     if (cached) return cached;

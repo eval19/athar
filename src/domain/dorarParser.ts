@@ -24,13 +24,25 @@ const NAMED_ENTITIES: Record<string, string> = {
   hellip: '…',
 };
 
+function safeCodePoint(codePoint: number, fallback: string): string {
+  if (
+    !Number.isInteger(codePoint) ||
+    codePoint < 0 ||
+    codePoint > 0x10ffff ||
+    (codePoint >= 0xd800 && codePoint <= 0xdfff)
+  ) {
+    return fallback;
+  }
+  return String.fromCodePoint(codePoint);
+}
+
 function decodeHtmlEntities(input: string): string {
   return input
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) =>
-      String.fromCodePoint(parseInt(hex, 16)),
+    .replace(/&#x([0-9a-fA-F]{1,8});/g, (full, hex: string) =>
+      safeCodePoint(parseInt(hex, 16), full),
     )
-    .replace(/&#(\d+);/g, (_, dec: string) =>
-      String.fromCodePoint(parseInt(dec, 10)),
+    .replace(/&#(\d{1,10});/g, (full, dec: string) =>
+      safeCodePoint(parseInt(dec, 10), full),
     )
     .replace(/&([a-zA-Z]+);/g, (full, name: string) => NAMED_ENTITIES[name] ?? full);
 }

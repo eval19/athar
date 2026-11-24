@@ -1,5 +1,18 @@
 apply plugin: 'com.android.application'
 
+def signingProps = new Properties()
+def signingPropsFile = rootProject.file('signing.properties')
+if (signingPropsFile.exists()) {
+    signingPropsFile.withInputStream { signingProps.load(it) }
+}
+def releaseStoreFile = signingProps.getProperty('storeFile') ?: System.getenv('ATHAR_STORE_FILE')
+def releaseStorePassword = signingProps.getProperty('storePassword') ?: System.getenv('ATHAR_STORE_PASSWORD')
+def releaseKeyAlias = signingProps.getProperty('keyAlias') ?: System.getenv('ATHAR_KEY_ALIAS')
+def releaseKeyPassword = signingProps.getProperty('keyPassword') ?: System.getenv('ATHAR_KEY_PASSWORD')
+def hasReleaseSigning = Boolean.valueOf(
+    releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword && file(releaseStoreFile).exists()
+)
+
 android {
     namespace = "app.athar.hadith"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +29,27 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
     buildTypes {
         release {
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

@@ -114,6 +114,15 @@ export function learnConfirmedQueryWords(query: string): void {
 }
 
 /**
+ * Clears all locally learned Arabic words from memory and persistent storage.
+ */
+export function clearLearnedWords(): void {
+  learnedSet.clear();
+  hydrated = true;
+  saveLearnedWords([]);
+}
+
+/**
  * Clears the in-memory learned shield for isolated unit tests.
  */
 export function clearLearnedWordsForTests(): void {

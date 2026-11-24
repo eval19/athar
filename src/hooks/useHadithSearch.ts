@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FilterMode, HadithResult, RecoveryMode } from '../domain/hadith';
+import { clearLearnedWords } from '../domain/learnedVocab';
 import { DorarProvider } from '../services/dorarClient';
 import {
   clearRecentSearches,
@@ -143,7 +144,9 @@ export function useHadithSearch() {
         setHasMore(res.hasMore);
       } catch (err) {
         if (controller.signal.aborted || seq !== requestSeqRef.current) return;
-        console.error('Search error:', err);
+        if (import.meta.env.DEV) {
+          console.error('Search error:', err);
+        }
         if (!options.append) {
           setItems([]);
           setHasMore(false);
@@ -244,6 +247,7 @@ export function useHadithSearch() {
   }, []);
 
   const clearRecent = useCallback(() => {
+    clearLearnedWords();
     setRecentSearches(clearRecentSearches());
   }, []);
 

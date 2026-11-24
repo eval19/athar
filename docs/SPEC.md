@@ -62,7 +62,7 @@ athar/
 - Live Dorar API verification + full web build + Android APK build (`minSdk 24`, `targetSdk 36`) + Android emulator / viewport UI verification in Arabic RTL & English LTR (Light and Dark modes).
 
 ## 7. Boundaries
-- **Always:** Preserve Dorar's exact hadith wording and exact scholar verdict verbatim; credit `dorar.net`; keep `muajjin/` strictly read-only/untouched; run `lint`, `typecheck`, `test`, and `build` before completion claims.
+- **Always:** Preserve Dorar's exact hadith wording and exact scholar verdict verbatim; credit `dorar.net`; run `lint`, `typecheck`, `test`, and `build` before completion claims.
 - **Ask first:** New dependencies outside approved spec, v2 features (Major Books full-Sanad, offline DB, Play Store signing).
 - **Never:** Hit unauthorized private endpoints (`search.hadeeth.com`), alter religious text/rulings, add ads/trackers, or request unnecessary Android permissions.
 
