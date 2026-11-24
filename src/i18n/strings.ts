@@ -267,7 +267,7 @@ const AR_STRINGS: AppStrings = {
   aboutSection: 'المصدر والأمانة العلمية',
   aboutCredit:
     'جميع نصوص الأحاديث وأحكام المحدثين مستمدة مباشرة من الموسوعة الحديثية — موقع الدرر السنية (dorar.net) دون تعديل.',
-  aboutVersion: 'الإصدار 1.1.0',
+  aboutVersion: 'الإصدار 1.2.0',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
 };
@@ -452,7 +452,7 @@ const EN_STRINGS: AppStrings = {
   aboutSection: 'Source & Attribution',
   aboutCredit:
     'All hadith texts and scholar verdicts are retrieved live and verbatim from the Al-Dorar Al-Saniyyah Hadith Encyclopedia (dorar.net).',
-  aboutVersion: 'Version 1.1.0',
+  aboutVersion: 'Version 1.2.0',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
 };
