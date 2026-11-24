@@ -3,6 +3,11 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Info, Loader2 } from 'lucide-react';
 import {
+  getSettingsUpdate,
+  getVisibleLandingUpdate,
+  type UpdateStorageState,
+} from './domain/appUpdate';
+import {
   markGradeHintDiscovered,
   recordGradeHintShown,
   shouldShowGradeHint,
@@ -30,6 +35,7 @@ import {
   loadLocale,
   loadReadingScale,
   loadThemePreference,
+  loadUpdateState,
   saveGradeHintState,
   saveLocale,
   saveReadingScale,
@@ -37,10 +43,15 @@ import {
   STORAGE_KEYS,
 } from './services/preferences';
 import { copyHadithText, shareHadithText } from './services/shareCopy';
+import {
+  APP_VERSION,
+  checkForAppUpdate,
+  dismissLandingUpdate,
+} from './services/updateChecker';
 import { FilterPills } from './components/FilterPills';
 import { HadithCard } from './components/HadithCard';
 import { Header } from './components/Header';
-import { InfoDialog } from './components/InfoDialog';
+import { InfoDialog, type ManualUpdateStatus } from './components/InfoDialog';
 import {
   EmptyResults,
   ErrorState,
@@ -69,6 +80,49 @@ export default function App() {
   const headerWrapRef = useRef<HTMLDivElement | null>(null);
   const headerHeightRef = useRef(64);
   const scrollHeaderRef = useRef<ScrollHeaderState>(createScrollHeaderState(0));
+  const [updateState, setUpdateState] = useState<UpdateStorageState>(() => loadUpdateState());
+  const [manualUpdateStatus, setManualUpdateStatus] = useState<ManualUpdateStatus>('idle');
+
+  const landingUpdate = useMemo(
+    () => getVisibleLandingUpdate(updateState, APP_VERSION),
+    [updateState],
+  );
+  const settingsUpdate = useMemo(
+    () => getSettingsUpdate(updateState, APP_VERSION),
+    [updateState],
+  );
+
+  // Quiet background stable-release check (at most once per 24h, after initial paint)
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void checkForAppUpdate().then((outcome) => {
+        if (active) setUpdateState(outcome.state);
+      });
+    }, 1500);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const handleDismissUpdate = useCallback((version: string) => {
+    setUpdateState(dismissLandingUpdate(version));
+  }, []);
+
+  const handleManualUpdateCheck = useCallback(() => {
+    setManualUpdateStatus('checking');
+    void checkForAppUpdate({ force: true }).then((outcome) => {
+      setUpdateState(outcome.state);
+      if (outcome.status === 'update-available') {
+        setManualUpdateStatus('idle');
+      } else if (outcome.status === 'up-to-date') {
+        setManualUpdateStatus('up-to-date');
+      } else if (outcome.status === 'error') {
+        setManualUpdateStatus('error');
+      }
+    });
+  }, []);
 
   const revealHeader = useCallback(() => {
     scrollHeaderRef.current = createScrollHeaderState(
@@ -316,9 +370,11 @@ export default function App() {
         {!search.hasSearched && !search.isLoading && (
           <InitialWelcome
             recentSearches={search.recentSearches}
+            availableUpdate={landingUpdate}
             onSelectQuery={search.selectQuery}
             onRemoveRecent={search.removeRecent}
             onClearRecent={search.clearRecent}
+            onDismissUpdate={handleDismissUpdate}
             strings={strings}
           />
         )}
@@ -393,7 +449,10 @@ export default function App() {
 
       <InfoDialog
         open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        onClose={() => {
+          setSettingsOpen(false);
+          setManualUpdateStatus('idle');
+        }}
         locale={locale}
         onLocaleChange={setLocale}
         themePref={themePref}
@@ -407,6 +466,9 @@ export default function App() {
           setReadingScale(scale);
           saveReadingScale(scale);
         }}
+        availableUpdate={settingsUpdate}
+        updateCheckStatus={manualUpdateStatus}
+        onCheckForUpdates={handleManualUpdateCheck}
         strings={strings}
       />
 

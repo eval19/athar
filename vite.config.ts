@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const pkg = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version: string };
 
 const PRODUCTION_CSP = [
   "default-src 'self'",
@@ -7,7 +12,7 @@ const PRODUCTION_CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://dorar.net",
+  "connect-src 'self' https://dorar.net https://api.github.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'self'",
@@ -27,6 +32,9 @@ function productionCspPlugin(): Plugin {
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [react(), productionCspPlugin()],
   server: {
     port: 5178,

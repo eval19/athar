@@ -1,8 +1,11 @@
 import { useEffect, useId, useRef } from 'react';
-import { Monitor, Moon, Sun, X } from 'lucide-react';
+import { Download, Loader2, Monitor, Moon, RefreshCw, Sun, X } from 'lucide-react';
+import type { AvailableUpdate } from '../domain/appUpdate';
 import type { Locale, ReadingScale, ThemePreference } from '../domain/hadith';
 import type { AppStrings } from '../i18n/strings';
 import { AtharLogo } from './AtharLogo';
+
+export type ManualUpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'error';
 
 interface InfoDialogProps {
   open: boolean;
@@ -14,6 +17,9 @@ interface InfoDialogProps {
   onThemeChange: (pref: ThemePreference) => void;
   readingScale: ReadingScale;
   onReadingScaleChange: (scale: ReadingScale) => void;
+  availableUpdate: AvailableUpdate | null;
+  updateCheckStatus: ManualUpdateStatus;
+  onCheckForUpdates: () => void;
   strings: AppStrings;
 }
 
@@ -73,6 +79,9 @@ export function InfoDialog({
   onThemeChange,
   readingScale,
   onReadingScaleChange,
+  availableUpdate,
+  updateCheckStatus,
+  onCheckForUpdates,
   strings,
 }: InfoDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -272,6 +281,51 @@ export function InfoDialog({
             <p className="mt-2 text-[0.7rem] font-medium tabular-nums text-faint">
               {strings.appName} • {strings.aboutVersion}
             </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {availableUpdate ? (
+                <a
+                  href={availableUpdate.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-xs font-semibold text-brand-ink transition-opacity hover:opacity-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <Download className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    {strings.downloadUpdate} ({availableUpdate.version})
+                  </span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onCheckForUpdates}
+                  disabled={updateCheckStatus === 'checking'}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-elevated px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-subtle hover:text-ink active:scale-95 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {updateCheckStatus === 'checking' ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" aria-hidden="true" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  )}
+                  <span>
+                    {updateCheckStatus === 'checking'
+                      ? strings.checkingForUpdates
+                      : strings.checkForUpdates}
+                  </span>
+                </button>
+              )}
+
+              {!availableUpdate && updateCheckStatus === 'up-to-date' && (
+                <span role="status" className="text-xs font-medium text-brand">
+                  {strings.upToDate}
+                </span>
+              )}
+              {!availableUpdate && updateCheckStatus === 'error' && (
+                <span role="status" className="text-xs font-medium text-muted">
+                  {strings.updateCheckFailed}
+                </span>
+              )}
+            </div>
           </section>
         </div>
       </div>

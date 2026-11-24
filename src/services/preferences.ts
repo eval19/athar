@@ -1,4 +1,8 @@
 import {
+  parseUpdateStorageState,
+  type UpdateStorageState,
+} from '../domain/appUpdate';
+import {
   type GradeHintState,
   parseGradeHintState,
 } from '../domain/gradeHint';
@@ -11,6 +15,7 @@ export const STORAGE_KEYS = {
   recentSearches: 'athar:recent-searches',
   gradeHint: 'athar:grade-hint',
   learnedWords: 'athar:learned-words',
+  updateState: 'athar:update-state',
 } as const;
 
 const MAX_RECENT = 6;
@@ -152,4 +157,12 @@ export function saveLearnedWords(words: string[]): void {
     return;
   }
   safeSet(STORAGE_KEYS.learnedWords, words.join(' '));
+}
+
+export function loadUpdateState(): UpdateStorageState {
+  return parseUpdateStorageState(safeGet(STORAGE_KEYS.updateState));
+}
+
+export function saveUpdateState(state: UpdateStorageState): void {
+  safeSet(STORAGE_KEYS.updateState, JSON.stringify(state));
 }

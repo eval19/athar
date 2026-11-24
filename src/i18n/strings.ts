@@ -75,6 +75,14 @@ export interface AppStrings {
   aboutSection: string;
   aboutCredit: string;
   aboutVersion: string;
+  updateAvailableTitle: (version: string) => string;
+  updateAvailableHint: string;
+  downloadUpdate: string;
+  dismissUpdate: string;
+  checkForUpdates: string;
+  checkingForUpdates: string;
+  upToDate: string;
+  updateCheckFailed: string;
   switchLangLabel: string;
   switchLangShort: string;
 }
@@ -268,6 +276,14 @@ const AR_STRINGS: AppStrings = {
   aboutCredit:
     'جميع نصوص الأحاديث وأحكام المحدثين مستمدة مباشرة من الموسوعة الحديثية — موقع الدرر السنية (dorar.net) دون تعديل.',
   aboutVersion: 'الإصدار 1.3.0',
+  updateAvailableTitle: (version) => `تحديث جديد متاح — الإصدار ${version}`,
+  updateAvailableHint: 'يتوفر إصدار مستقر أحدث من تطبيق أَثَر.',
+  downloadUpdate: 'تحميل التحديث',
+  dismissUpdate: 'تجاهل التحديث',
+  checkForUpdates: 'التحقق من التحديثات',
+  checkingForUpdates: 'جاري التحقق…',
+  upToDate: 'تستخدم أحدث إصدار',
+  updateCheckFailed: 'تعذّر التحقق الآن، حاول لاحقًا',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
 };
@@ -453,6 +469,14 @@ const EN_STRINGS: AppStrings = {
   aboutCredit:
     'All hadith texts and scholar verdicts are retrieved live and verbatim from the Al-Dorar Al-Saniyyah Hadith Encyclopedia (dorar.net).',
   aboutVersion: 'Version 1.3.0',
+  updateAvailableTitle: (version) => `New update available — v${version}`,
+  updateAvailableHint: 'A newer stable version of Athar is ready to download.',
+  downloadUpdate: 'Download update',
+  dismissUpdate: 'Dismiss update',
+  checkForUpdates: 'Check for updates',
+  checkingForUpdates: 'Checking…',
+  upToDate: 'You are on the latest version',
+  updateCheckFailed: 'Could not check right now',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
 };
