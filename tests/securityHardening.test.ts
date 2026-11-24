@@ -7,6 +7,7 @@ import {
 } from '../src/domain/learnedVocab';
 import {
   assertAllowedDorarUrl,
+  assertAllowedRedirectUrl,
   DorarProvider,
   isValidDorarId,
   MAX_QUERY_LENGTH,
@@ -61,6 +62,37 @@ describe('securityHardening', () => {
     expect(() => assertAllowedDorarUrl('file:///etc/passwd', true)).toThrow();
     expect(() => assertAllowedDorarUrl('//evil.example/dorar-proxy/', false)).toThrow();
     expect(() => assertAllowedDorarUrl('/dorar-proxy/hadith/search?q=test', true)).toThrow();
+  });
+
+  it('re-verifies final redirect destinations on native and web dev proxy safely', () => {
+    expect(() =>
+      assertAllowedRedirectUrl('https://dorar.net/hadith/search?q=test', true),
+    ).not.toThrow();
+    expect(() =>
+      assertAllowedRedirectUrl('https://www.dorar.net/h/abc123/osoul', true),
+    ).not.toThrow();
+    expect(() =>
+      assertAllowedRedirectUrl(
+        'http://localhost:5178/dorar-proxy/hadith/search?q=test',
+        false,
+        'http://localhost:5178',
+      ),
+    ).not.toThrow();
+    expect(() => assertAllowedRedirectUrl(undefined, true)).not.toThrow();
+
+    expect(() =>
+      assertAllowedRedirectUrl('https://attacker.example/phish', true),
+    ).toThrow();
+    expect(() =>
+      assertAllowedRedirectUrl('http://dorar.net/hadith/search?q=test', true),
+    ).toThrow();
+    expect(() =>
+      assertAllowedRedirectUrl(
+        'http://localhost:5178/other/path',
+        false,
+        'http://localhost:5178',
+      ),
+    ).toThrow();
   });
 
   it('validates dorarId strictly and makes 0 HTTP calls for invalid IDs', async () => {

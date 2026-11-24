@@ -39,6 +39,32 @@ if (-not $env:ANDROID_HOME -or -not (Test-Path $env:ANDROID_HOME)) {
 
 $env:PATH = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:PATH"
 
+# If building a release without plaintext signing.properties or env vars, prompt securely in memory
+$SigningPropsFile = Join-Path $AndroidDir 'signing.properties'
+$DefaultKeystore = Join-Path $env:USERPROFILE '.athar-signing\athar-release.jks'
+$PromptedSigning = $false
+
+if (
+  $Task -in @('assembleRelease', 'bundleRelease') -and
+  -not (Test-Path $SigningPropsFile) -and
+  -not $env:ATHAR_STORE_PASSWORD -and
+  (Test-Path $DefaultKeystore)
+) {
+  $sec = Read-Host 'Enter Athar release keystore password' -AsSecureString
+  $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
+  try {
+    $plain = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+  } finally {
+    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+  }
+  $env:ATHAR_STORE_FILE = $DefaultKeystore
+  $env:ATHAR_KEY_ALIAS = 'athar-release'
+  $env:ATHAR_STORE_PASSWORD = $plain
+  $env:ATHAR_KEY_PASSWORD = $plain
+  $plain = $null
+  $PromptedSigning = $true
+}
+
 Push-Location $ProjectRoot
 try {
   Write-Host "==> Building web bundle..."
@@ -61,5 +87,8 @@ try {
     Pop-Location
   }
 } finally {
+  if ($PromptedSigning) {
+    Remove-Item Env:ATHAR_STORE_FILE, Env:ATHAR_KEY_ALIAS, Env:ATHAR_STORE_PASSWORD, Env:ATHAR_KEY_PASSWORD -ErrorAction SilentlyContinue
+  }
   Pop-Location
 }

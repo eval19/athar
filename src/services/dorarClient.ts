@@ -81,6 +81,22 @@ export function assertAllowedDorarUrl(
   }
 }
 
+/**
+ * Re-verifies the final response URL after any HTTP redirect so native or
+ * browser networking cannot silently land on an untrusted host.
+ */
+export function assertAllowedRedirectUrl(
+  finalUrl: string | undefined,
+  isNative = Capacitor.isNativePlatform(),
+  webOrigin = typeof window !== 'undefined' ? window.location.origin : undefined,
+): void {
+  if (!finalUrl) return;
+  if (!isNative && webOrigin && finalUrl.startsWith(`${webOrigin}/dorar-proxy/`)) {
+    return;
+  }
+  assertAllowedDorarUrl(finalUrl, isNative);
+}
+
 function assertSafeResponseSize(body: string): string {
   if (body.length > MAX_RESPONSE_CHARS) {
     throw new Error('Dorar response exceeded safety limit');
@@ -164,6 +180,7 @@ async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<stri
       connectTimeout: 12000,
       readTimeout: 15000,
     });
+    assertAllowedRedirectUrl(response.url, true);
     if (response.status < 200 || response.status >= 300) {
       throw new Error(`Dorar API error (${response.status})`);
     }
@@ -187,6 +204,7 @@ async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<stri
       referrerPolicy: 'no-referrer',
       headers: { Accept: 'text/html, application/json, text/plain, */*' },
     });
+    assertAllowedRedirectUrl(res.url, false);
     if (!res.ok) {
       throw new Error(`Dorar API error (${res.status})`);
     }
