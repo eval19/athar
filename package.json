@@ -1,7 +1,7 @@
 {
   "name": "athar",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "أَثَر (Athar) — Clean Arabic Hadith search app powered by Al-Dorar.",
   "type": "module",
   "scripts": {
