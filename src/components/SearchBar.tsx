@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 import type { AppStrings } from '../i18n/strings';
 import { MAX_QUERY_LENGTH } from '../services/dorarClient';
@@ -9,6 +9,7 @@ interface SearchBarProps {
   onSubmit: (value: string) => void;
   onClear: () => void;
   isLoading: boolean;
+  focusSignal?: number;
   strings: AppStrings;
 }
 
@@ -18,9 +19,18 @@ export function SearchBar({
   onSubmit,
   onClear,
   isLoading,
+  focusSignal = 0,
   strings,
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusSignal <= 0) return;
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [focusSignal]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

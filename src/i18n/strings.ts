@@ -85,6 +85,15 @@ export interface AppStrings {
   updateCheckFailed: string;
   switchLangLabel: string;
   switchLangShort: string;
+  desktopQuickSearch: string;
+  desktopPin: string;
+  desktopUnpin: string;
+  desktopHide: string;
+  desktopSection: string;
+  desktopShortcutLabel: string;
+  desktopShortcutEnabled: string;
+  desktopAutostart: string;
+  desktopShortcutError: string;
 }
 
 const AR_STRINGS: AppStrings = {
@@ -286,6 +295,15 @@ const AR_STRINGS: AppStrings = {
   updateCheckFailed: 'تعذّر التحقق الآن، حاول لاحقًا',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
+  desktopQuickSearch: 'بحث سريع',
+  desktopPin: 'تثبيت النافذة',
+  desktopUnpin: 'إلغاء تثبيت النافذة',
+  desktopHide: 'إخفاء النافذة',
+  desktopSection: 'اختصار سطح المكتب',
+  desktopShortcutLabel: 'مفتاح الإظهار السريع',
+  desktopShortcutEnabled: 'تفعيل الاختصار العام',
+  desktopAutostart: 'التشغيل تلقائيًا مع ويندوز',
+  desktopShortcutError: 'تعذّر تسجيل هذا الاختصار، قد يكون مستخدمًا في تطبيق آخر.',
 };
 
 const EN_STRINGS: AppStrings = {
@@ -479,6 +497,15 @@ const EN_STRINGS: AppStrings = {
   updateCheckFailed: 'Could not check right now',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
+  desktopQuickSearch: 'Quick Search',
+  desktopPin: 'Pin window',
+  desktopUnpin: 'Unpin window',
+  desktopHide: 'Hide window',
+  desktopSection: 'Desktop Quick Access',
+  desktopShortcutLabel: 'Global Shortcut Key',
+  desktopShortcutEnabled: 'Enable global shortcut',
+  desktopAutostart: 'Launch at Windows startup',
+  desktopShortcutError: 'Could not register this shortcut; it may be in use by another app.',
 };
 
 export function getStrings(locale: Locale): AppStrings {

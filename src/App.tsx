@@ -27,6 +27,18 @@ import {
 } from './domain/scrollHeader';
 import { useHadithSearch } from './hooks/useHadithSearch';
 import { getStrings } from './i18n/strings';
+import {
+  DEFAULT_DESKTOP_STATE,
+  type DesktopState,
+  getDesktopState,
+  hideDesktopWindow,
+  isTauriDesktop,
+  listenDesktopState,
+  listenFocusSearch,
+  setDesktopAutostart,
+  setDesktopPinned,
+  setDesktopShortcut,
+} from './services/desktopBridge';
 import { syncNativeSystemBars } from './services/nativeChrome';
 import {
   applyLocaleToDocument,
@@ -48,6 +60,7 @@ import {
   checkForAppUpdate,
   dismissLandingUpdate,
 } from './services/updateChecker';
+import { DesktopChromeBar } from './components/DesktopChromeBar';
 import { FilterPills } from './components/FilterPills';
 import { HadithCard } from './components/HadithCard';
 import { Header } from './components/Header';
@@ -83,6 +96,10 @@ export default function App() {
   const scrollHeaderRef = useRef<ScrollHeaderState>(createScrollHeaderState(0));
   const [updateState, setUpdateState] = useState<UpdateStorageState>(() => loadUpdateState());
   const [manualUpdateStatus, setManualUpdateStatus] = useState<ManualUpdateStatus>('idle');
+  const isDesktop = isTauriDesktop();
+  const [desktopState, setDesktopState] = useState<DesktopState>(DEFAULT_DESKTOP_STATE);
+  const [desktopShortcutError, setDesktopShortcutError] = useState(false);
+  const [searchFocusSignal, setSearchFocusSignal] = useState(0);
 
   const landingUpdate = useMemo(
     () => getVisibleLandingUpdate(updateState, APP_VERSION),
@@ -174,6 +191,61 @@ export default function App() {
   }, []);
 
   const { inputValue, setInputValue } = search;
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    let active = true;
+    void getDesktopState().then((st) => {
+      if (active) setDesktopState(st);
+    });
+
+    const unlistenState = listenDesktopState((st) => {
+      if (active) setDesktopState(st);
+    });
+    const unlistenFocus = listenFocusSearch(() => {
+      if (!active) return;
+      revealHeader();
+      setSearchFocusSignal((n) => n + 1);
+    });
+
+    return () => {
+      active = false;
+      void unlistenState.then((fn) => fn());
+      void unlistenFocus.then((fn) => fn());
+    };
+  }, [isDesktop, revealHeader]);
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || settingsOpen) return;
+      event.preventDefault();
+      if (inputValue.trim().length > 0) {
+        setInputValue('');
+      } else {
+        void hideDesktopWindow();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isDesktop, settingsOpen, inputValue, setInputValue]);
+
+  const handleToggleDesktopPin = useCallback(() => {
+    void setDesktopPinned(!desktopState.pinned).then(setDesktopState);
+  }, [desktopState.pinned]);
+
+  const handleDesktopShortcutChange = useCallback((shortcut: string, enabled: boolean) => {
+    setDesktopShortcutError(false);
+    void setDesktopShortcut(shortcut, enabled)
+      .then((next) => setDesktopState(next))
+      .catch(() => setDesktopShortcutError(true));
+  }, []);
+
+  const handleDesktopAutostartChange = useCallback((enabled: boolean) => {
+    void setDesktopAutostart(enabled)
+      .then((next) => setDesktopState(next))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -333,6 +405,16 @@ export default function App() {
         }${headerHidden ? ' top-chrome-collapsed' : ''}`}
         style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
       >
+        {isDesktop && (
+          <DesktopChromeBar
+            pinned={desktopState.pinned}
+            shortcut={desktopState.shortcut}
+            shortcutEnabled={desktopState.shortcutEnabled}
+            onTogglePin={handleToggleDesktopPin}
+            onHide={() => void hideDesktopWindow()}
+            strings={strings}
+          />
+        )}
         <div ref={headerWrapRef} className="top-header-cap" onFocusCapture={revealHeader}>
           <Header
             locale={locale}
@@ -354,6 +436,7 @@ export default function App() {
               onSubmit={search.submitSearch}
               onClear={() => search.setInputValue('')}
               isLoading={search.isLoading}
+              focusSignal={searchFocusSignal}
               strings={strings}
             />
             <FilterPills value={search.filter} onChange={search.setFilter} strings={strings} />
@@ -505,6 +588,16 @@ export default function App() {
         availableUpdate={settingsUpdate}
         updateCheckStatus={manualUpdateStatus}
         onCheckForUpdates={handleManualUpdateCheck}
+        desktop={
+          isDesktop
+            ? {
+                state: desktopState,
+                shortcutError: desktopShortcutError,
+                onShortcutChange: handleDesktopShortcutChange,
+                onAutostartChange: handleDesktopAutostartChange,
+              }
+            : undefined
+        }
         strings={strings}
       />
 
