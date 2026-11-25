@@ -1,11 +1,20 @@
 import { useEffect, useId, useRef } from 'react';
-import { Download, Loader2, Monitor, Moon, RefreshCw, Sun, X } from 'lucide-react';
+import { Download, Keyboard, Loader2, Monitor, Moon, Power, RefreshCw, Sun, X } from 'lucide-react';
 import type { AvailableUpdate } from '../domain/appUpdate';
+import { DESKTOP_SHORTCUT_PRESETS } from '../domain/desktopShortcut';
 import type { Locale, ReadingScale, ThemePreference } from '../domain/hadith';
 import type { AppStrings } from '../i18n/strings';
+import type { DesktopState } from '../services/desktopBridge';
 import { AtharLogo } from './AtharLogo';
 
 export type ManualUpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'error';
+
+export interface DesktopSettingsProps {
+  state: DesktopState;
+  shortcutError: boolean;
+  onShortcutChange: (shortcut: string, enabled: boolean) => void;
+  onAutostartChange: (enabled: boolean) => void;
+}
 
 interface InfoDialogProps {
   open: boolean;
@@ -20,6 +29,7 @@ interface InfoDialogProps {
   availableUpdate: AvailableUpdate | null;
   updateCheckStatus: ManualUpdateStatus;
   onCheckForUpdates: () => void;
+  desktop?: DesktopSettingsProps;
   strings: AppStrings;
 }
 
@@ -82,6 +92,7 @@ export function InfoDialog({
   availableUpdate,
   updateCheckStatus,
   onCheckForUpdates,
+  desktop,
   strings,
 }: InfoDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -269,6 +280,92 @@ export function InfoDialog({
               })}
             </div>
           </section>
+
+          {/* Desktop Quick Access (Tauri Windows only) */}
+          {desktop && (
+            <section className="space-y-3 border-t border-line pt-4">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+                <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{strings.desktopSection}</span>
+              </h3>
+
+              <div>
+                <p className="mb-2 text-[0.72rem] font-medium text-muted">
+                  {strings.desktopShortcutLabel}
+                </p>
+                <div className="flex flex-wrap gap-1.5" dir="ltr">
+                  {DESKTOP_SHORTCUT_PRESETS.map((preset) => {
+                    const active =
+                      desktop.state.shortcut.toLowerCase() === preset.id.toLowerCase();
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() =>
+                          desktop.onShortcutChange(preset.id, desktop.state.shortcutEnabled)
+                        }
+                        className={
+                          active
+                            ? 'min-h-9 rounded-xl border border-brand bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                            : 'min-h-9 rounded-xl border border-transparent bg-elevated px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                        }
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {desktop.shortcutError && (
+                  <p role="alert" className="mt-2 text-xs font-medium text-muted">
+                    {strings.desktopShortcutError}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  aria-pressed={desktop.state.shortcutEnabled}
+                  onClick={() =>
+                    desktop.onShortcutChange(
+                      desktop.state.shortcut,
+                      !desktop.state.shortcutEnabled,
+                    )
+                  }
+                  className={
+                    desktop.state.shortcutEnabled
+                      ? 'flex min-h-10 items-center justify-between gap-2 rounded-xl border border-brand bg-brand-soft px-3.5 py-2 text-start text-xs font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                      : 'flex min-h-10 items-center justify-between gap-2 rounded-xl border border-transparent bg-elevated px-3.5 py-2 text-start text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                  }
+                >
+                  <span>{strings.desktopShortcutEnabled}</span>
+                  <span className="text-[0.7rem]">
+                    {desktop.state.shortcutEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={desktop.state.autostart}
+                  onClick={() => desktop.onAutostartChange(!desktop.state.autostart)}
+                  className={
+                    desktop.state.autostart
+                      ? 'flex min-h-10 items-center justify-between gap-2 rounded-xl border border-brand bg-brand-soft px-3.5 py-2 text-start text-xs font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                      : 'flex min-h-10 items-center justify-between gap-2 rounded-xl border border-transparent bg-elevated px-3.5 py-2 text-start text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <Power className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>{strings.desktopAutostart}</span>
+                  </span>
+                  <span className="text-[0.7rem]">
+                    {desktop.state.autostart ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* Source & Attribution */}
           <section className="border-t border-line pt-4">

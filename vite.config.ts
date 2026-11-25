@@ -6,13 +6,17 @@ const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string };
 
+const isTauriBuild = Boolean(process.env.TAURI_ENV_PLATFORM);
+
 const PRODUCTION_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://dorar.net https://api.github.com",
+  isTauriBuild
+    ? "connect-src 'self' ipc: http://ipc.localhost https://dorar.net https://api.github.com"
+    : "connect-src 'self' https://dorar.net https://api.github.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'self'",

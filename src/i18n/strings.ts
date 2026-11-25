@@ -85,6 +85,30 @@ export interface AppStrings {
   updateCheckFailed: string;
   switchLangLabel: string;
   switchLangShort: string;
+  desktopQuickSearch: string;
+  desktopPin: string;
+  desktopUnpin: string;
+  desktopHide: string;
+  desktopSection: string;
+  desktopShortcutLabel: string;
+  desktopShortcutEnabled: string;
+  desktopAutostart: string;
+  desktopShortcutError: string;
+  readerOpen: string;
+  readerVerdictTab: string;
+  readerGradeTab: string;
+  readerFontSmaller: string;
+  readerFontLarger: string;
+  readerOtherRulingsTab: (count: number) => string;
+  readerPrevHadith: string;
+  readerNextHadith: string;
+  readerScholarsVerdictLabel: string;
+  readerPositionLabel: (current: number, total: number) => string;
+  readerToggleTashkeel: string;
+  readerOpenDorar: string;
+  readerResizeDivider: string;
+  readerCautionSevere: string;
+  readerJumpAltSahih: string;
 }
 
 const AR_STRINGS: AppStrings = {
@@ -286,6 +310,30 @@ const AR_STRINGS: AppStrings = {
   updateCheckFailed: 'تعذّر التحقق الآن، حاول لاحقًا',
   switchLangLabel: 'Switch interface to English',
   switchLangShort: 'EN',
+  desktopQuickSearch: 'بحث سريع',
+  desktopPin: 'تثبيت النافذة',
+  desktopUnpin: 'إلغاء تثبيت النافذة',
+  desktopHide: 'إخفاء النافذة',
+  desktopSection: 'اختصار سطح المكتب',
+  desktopShortcutLabel: 'مفتاح الإظهار السريع',
+  desktopShortcutEnabled: 'تفعيل الاختصار العام',
+  desktopAutostart: 'التشغيل تلقائيًا مع ويندوز',
+  desktopShortcutError: 'تعذّر تسجيل هذا الاختصار، قد يكون مستخدمًا في تطبيق آخر.',
+  readerOpen: 'عرض في بطاقة القراءة',
+  readerVerdictTab: 'الحكم والتخريج',
+  readerGradeTab: 'شرح الدرجة',
+  readerFontSmaller: 'تصغير الخط',
+  readerFontLarger: 'تكبير الخط',
+  readerOtherRulingsTab: (count) => `أحكام أخرى (${count})`,
+  readerPrevHadith: 'الحديث السابق',
+  readerNextHadith: 'الحديث التالي',
+  readerScholarsVerdictLabel: 'خلاصة الحكم والمحدث',
+  readerPositionLabel: (current, total) => `${current} من ${total}`,
+  readerToggleTashkeel: 'إظهار أو إخفاء التشكيل',
+  readerOpenDorar: 'فتح في الدرر السنية',
+  readerResizeDivider: 'اسحب لتغيير الحجم أو انقر مرتين لإعادة الضبط',
+  readerCautionSevere: 'تنبيه: هذا الحديث لا يصح — راجع حكم المحدث أدناه.',
+  readerJumpAltSahih: 'عرض الصحيح البديل',
 };
 
 const EN_STRINGS: AppStrings = {
@@ -479,6 +527,30 @@ const EN_STRINGS: AppStrings = {
   updateCheckFailed: 'Could not check right now',
   switchLangLabel: 'تبديل الواجهة إلى العربية',
   switchLangShort: 'ع',
+  desktopQuickSearch: 'Quick Search',
+  desktopPin: 'Pin window',
+  desktopUnpin: 'Unpin window',
+  desktopHide: 'Hide window',
+  desktopSection: 'Desktop Quick Access',
+  desktopShortcutLabel: 'Global Shortcut Key',
+  desktopShortcutEnabled: 'Enable global shortcut',
+  desktopAutostart: 'Launch at Windows startup',
+  desktopShortcutError: 'Could not register this shortcut; it may be in use by another app.',
+  readerOpen: 'Open in reader card',
+  readerVerdictTab: 'Verdict & Sources',
+  readerGradeTab: 'Grade Meaning',
+  readerFontSmaller: 'Smaller text',
+  readerFontLarger: 'Larger text',
+  readerOtherRulingsTab: (count) => `Other Rulings (${count})`,
+  readerPrevHadith: 'Previous hadith',
+  readerNextHadith: 'Next hadith',
+  readerScholarsVerdictLabel: 'Scholar Verdict',
+  readerPositionLabel: (current, total) => `${current} of ${total}`,
+  readerToggleTashkeel: 'Toggle diacritics (Tashkeel)',
+  readerOpenDorar: 'Open on Al-Dorar',
+  readerResizeDivider: 'Drag to resize or double-click to reset',
+  readerCautionSevere: 'Caution: This narration is unauthentic — review the scholar verdict below.',
+  readerJumpAltSahih: 'View Authentic Alternative',
 };
 
 export function getStrings(locale: Locale): AppStrings {

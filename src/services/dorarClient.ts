@@ -33,6 +33,7 @@ import type {
   SearchResponse,
 } from '../domain/hadith';
 import type { HadithProvider } from './hadithProvider';
+import { desktopFetch, isTauriDesktop } from './desktopBridge';
 
 export type HttpFetchFn = (url: string, signal?: AbortSignal) => Promise<string>;
 
@@ -63,7 +64,7 @@ export function isValidDorarId(dorarId: string): boolean {
  */
 export function assertAllowedDorarUrl(
   url: string,
-  isNative = Capacitor.isNativePlatform(),
+  isNative = Capacitor.isNativePlatform() || isTauriDesktop(),
 ): void {
   if (!isNative && url.startsWith('/dorar-proxy/') && !url.startsWith('//')) {
     return;
@@ -172,6 +173,24 @@ export function buildDorarWebSearchUrl(
 
 async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<string> {
   assertAllowedDorarUrl(url);
+
+  if (isTauriDesktop()) {
+    if (signal?.aborted) {
+      const err = new Error('The operation was aborted.');
+      err.name = 'AbortError';
+      throw err;
+    }
+    const text = await desktopFetch(url, {
+      accept: 'text/html, application/json, text/plain, */*',
+      maxBytes: MAX_RESPONSE_CHARS,
+    });
+    if (signal?.aborted) {
+      const err = new Error('The operation was aborted.');
+      err.name = 'AbortError';
+      throw err;
+    }
+    return assertSafeResponseSize(text);
+  }
 
   if (Capacitor.isNativePlatform()) {
     const response = await CapacitorHttp.get({
@@ -328,9 +347,10 @@ export class DorarProvider implements HadithProvider {
   private readonly relatedCache = new Map<string, CacheEntry<HadithResult[]>>();
 
   constructor(options: DorarProviderOptions = {}) {
-    const defaultBase = Capacitor.isNativePlatform()
-      ? DEFAULT_NATIVE_WEB_BASE
-      : DEFAULT_WEB_DEV_BASE;
+    const defaultBase =
+      Capacitor.isNativePlatform() || isTauriDesktop()
+        ? DEFAULT_NATIVE_WEB_BASE
+        : DEFAULT_WEB_DEV_BASE;
 
     this.webBase = (options.webBase ?? defaultBase).replace(/\/+$/, '');
     this.apiEndpoint = options.endpoint ?? `${this.webBase}/dorar_api.json`;

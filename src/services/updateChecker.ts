@@ -9,6 +9,7 @@ import {
   type UpdateStorageState,
 } from '../domain/appUpdate';
 import { loadUpdateState, saveUpdateState } from './preferences';
+import { desktopFetch, isTauriDesktop } from './desktopBridge';
 
 export const APP_VERSION: string =
   typeof __APP_VERSION__ === 'string' && __APP_VERSION__.length > 0
@@ -43,6 +44,17 @@ export function assertAllowedGitHubApiUrl(rawUrl: string): void {
 
 async function fetchLatestReleaseJson(): Promise<unknown> {
   assertAllowedGitHubApiUrl(LATEST_RELEASE_API_URL);
+
+  if (isTauriDesktop()) {
+    const text = await desktopFetch(LATEST_RELEASE_API_URL, {
+      accept: 'application/vnd.github+json',
+      maxBytes: MAX_RELEASE_JSON_CHARS,
+    });
+    if (text.length > MAX_RELEASE_JSON_CHARS) {
+      throw new Error('Update response too large');
+    }
+    return JSON.parse(text) as unknown;
+  }
 
   if (Capacitor.isNativePlatform()) {
     const response = await CapacitorHttp.get({

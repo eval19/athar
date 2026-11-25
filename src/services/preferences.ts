@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   colorScheme: 'athar:color-scheme',
   locale: 'athar:locale',
   readingScale: 'athar:reading-scale',
+  readerReadingScale: 'athar:reader-reading-scale',
+  readerTashkeel: 'athar:reader-tashkeel',
   recentSearches: 'athar:recent-searches',
   gradeHint: 'athar:grade-hint',
   learnedWords: 'athar:learned-words',
@@ -94,14 +96,36 @@ export function applyLocaleToDocument(locale: Locale): void {
   document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
 }
 
-export function loadReadingScale(): ReadingScale {
-  const saved = safeGet(STORAGE_KEYS.readingScale);
+function loadScaleForKey(key: string): ReadingScale {
+  const saved = safeGet(key);
   if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
   return 'md';
 }
 
+export function loadReadingScale(): ReadingScale {
+  return loadScaleForKey(STORAGE_KEYS.readingScale);
+}
+
 export function saveReadingScale(scale: ReadingScale): void {
   safeSet(STORAGE_KEYS.readingScale, scale);
+}
+
+export function loadReaderReadingScale(): ReadingScale {
+  return loadScaleForKey(STORAGE_KEYS.readerReadingScale);
+}
+
+export function saveReaderReadingScale(scale: ReadingScale): void {
+  safeSet(STORAGE_KEYS.readerReadingScale, scale);
+}
+
+export function loadReaderTashkeel(): boolean {
+  const saved = safeGet(STORAGE_KEYS.readerTashkeel);
+  if (saved === '0' || saved === 'false') return false;
+  return true;
+}
+
+export function saveReaderTashkeel(enabled: boolean): void {
+  safeSet(STORAGE_KEYS.readerTashkeel, enabled ? '1' : '0');
 }
 
 export function loadRecentSearches(): string[] {
