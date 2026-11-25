@@ -94,6 +94,11 @@ export interface AppStrings {
   desktopShortcutEnabled: string;
   desktopAutostart: string;
   desktopShortcutError: string;
+  readerOpen: string;
+  readerVerdictTab: string;
+  readerGradeTab: string;
+  readerFontSmaller: string;
+  readerFontLarger: string;
 }
 
 const AR_STRINGS: AppStrings = {
@@ -304,6 +309,11 @@ const AR_STRINGS: AppStrings = {
   desktopShortcutEnabled: 'تفعيل الاختصار العام',
   desktopAutostart: 'التشغيل تلقائيًا مع ويندوز',
   desktopShortcutError: 'تعذّر تسجيل هذا الاختصار، قد يكون مستخدمًا في تطبيق آخر.',
+  readerOpen: 'عرض في بطاقة القراءة',
+  readerVerdictTab: 'الحكم والتخريج',
+  readerGradeTab: 'شرح الدرجة',
+  readerFontSmaller: 'تصغير الخط',
+  readerFontLarger: 'تكبير الخط',
 };
 
 const EN_STRINGS: AppStrings = {
@@ -506,6 +516,11 @@ const EN_STRINGS: AppStrings = {
   desktopShortcutEnabled: 'Enable global shortcut',
   desktopAutostart: 'Launch at Windows startup',
   desktopShortcutError: 'Could not register this shortcut; it may be in use by another app.',
+  readerOpen: 'Open in reader card',
+  readerVerdictTab: 'Verdict & Sources',
+  readerGradeTab: 'Grade Meaning',
+  readerFontSmaller: 'Smaller text',
+  readerFontLarger: 'Larger text',
 };
 
 export function getStrings(locale: Locale): AppStrings {

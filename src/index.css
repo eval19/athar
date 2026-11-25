@@ -704,7 +704,6 @@ html[data-platform='desktop'] {
 
 html[data-platform='desktop'] body {
   overflow-x: hidden;
-  border: 1px solid var(--border-strong);
   min-height: 100dvh;
 }
 

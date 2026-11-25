@@ -35,6 +35,8 @@ import {
   isTauriDesktop,
   listenDesktopState,
   listenFocusSearch,
+  listenReaderClosed,
+  openDesktopReader,
   setDesktopAutostart,
   setDesktopPinned,
   setDesktopShortcut,
@@ -100,6 +102,7 @@ export default function App() {
   const [desktopState, setDesktopState] = useState<DesktopState>(DEFAULT_DESKTOP_STATE);
   const [desktopShortcutError, setDesktopShortcutError] = useState(false);
   const [searchFocusSignal, setSearchFocusSignal] = useState(0);
+  const [activeReaderId, setActiveReaderId] = useState<string | null>(null);
 
   const landingUpdate = useMemo(
     () => getVisibleLandingUpdate(updateState, APP_VERSION),
@@ -208,12 +211,16 @@ export default function App() {
       revealHeader();
       setSearchFocusSignal((n) => n + 1);
     });
+    const unlistenReaderClosed = listenReaderClosed(() => {
+      if (active) setActiveReaderId(null);
+    });
 
     return () => {
       active = false;
       document.documentElement.removeAttribute('data-platform');
       void unlistenState.then((fn) => fn());
       void unlistenFocus.then((fn) => fn());
+      void unlistenReaderClosed.then((fn) => fn());
     };
   }, [isDesktop, revealHeader]);
 
@@ -248,6 +255,21 @@ export default function App() {
       .then((next) => setDesktopState(next))
       .catch(() => {});
   }, []);
+
+  const handleOpenReader = useCallback(
+    (hadith: HadithResult, others: HadithResult[]) => {
+      setActiveReaderId(hadith.id);
+      void openDesktopReader({
+        hadith,
+        others,
+        highlightQuery: search.effectiveQuery || search.activeQuery,
+        locale,
+        readingScale,
+        themePref,
+      });
+    },
+    [locale, readingScale, search.activeQuery, search.effectiveQuery, themePref],
+  );
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -548,6 +570,8 @@ export default function App() {
                   onFetchOsoul={search.fetchOsoul}
                   onFetchAltSahih={search.fetchAltSahih}
                   onFetchSimilar={search.fetchSimilar}
+                  onOpenReader={isDesktop ? handleOpenReader : undefined}
+                  isReaderActive={isDesktop && activeReaderId === group.primary.id}
                 />
               ))}
             </div>

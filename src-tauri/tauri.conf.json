@@ -24,6 +24,21 @@
         "skipTaskbar": true,
         "visible": false,
         "shadow": true
+      },
+      {
+        "label": "reader",
+        "url": "index.html?view=reader",
+        "title": "أَثَر — قراءة الحديث",
+        "width": 760,
+        "height": 560,
+        "minWidth": 520,
+        "minHeight": 420,
+        "resizable": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "shadow": true
       }
     ],
     "security": {

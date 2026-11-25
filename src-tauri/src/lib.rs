@@ -2,10 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::thread;
 use std::time::{Duration, Instant};
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewWindow, WindowEvent};
+use tauri::{
+    AppHandle, Emitter, Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewWindow,
+    WindowEvent,
+};
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use url::Url;
@@ -14,7 +18,11 @@ const DEFAULT_SHORTCUT: &str = "End";
 const POPUP_LOGICAL_WIDTH: f64 = 420.0;
 const POPUP_LOGICAL_HEIGHT: f64 = 620.0;
 const POPUP_MARGIN_LOGICAL: f64 = 14.0;
-const BLUR_GRACE_MS: u128 = 240;
+const READER_LOGICAL_WIDTH: f64 = 760.0;
+const READER_LOGICAL_HEIGHT: f64 = 560.0;
+const READER_MARGIN_LOGICAL: f64 = 28.0;
+const BLUR_GRACE_MS: u128 = 260;
+const FOCUS_TRANSFER_WAIT_MS: u64 = 130;
 const MAX_FETCH_BYTES: usize = 2 * 1024 * 1024;
 const GITHUB_RELEASES_PREFIX: &str = "/repos/eval19/athar/releases";
 
@@ -54,6 +62,9 @@ struct TrayHandles {
 struct DesktopState {
     config: Mutex<PersistedDesktopConfig>,
     last_shown_at: Mutex<Option<Instant>>,
+    reader_last_shown_at: Mutex<Option<Instant>>,
+    reader_pinned: Mutex<bool>,
+    reader_payload: Mutex<Option<serde_json::Value>>,
     tray: Mutex<Option<TrayHandles>>,
     http: reqwest::Client,
 }
@@ -70,11 +81,35 @@ impl DesktopState {
         Self {
             config: Mutex::new(config),
             last_shown_at: Mutex::new(None),
+            reader_last_shown_at: Mutex::new(None),
+            reader_pinned: Mutex::new(false),
+            reader_payload: Mutex::new(None),
             tray: Mutex::new(None),
             http,
         }
     }
 }
+
+#[cfg(target_os = "windows")]
+fn apply_win11_rounded_corners(window: &WebviewWindow) {
+    use windows_sys::Win32::Graphics::Dwm::{
+        DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND,
+    };
+    if let Ok(hwnd) = window.hwnd() {
+        let preference = DWMWCP_ROUND;
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                hwnd.0 as _,
+                DWMWA_WINDOW_CORNER_PREFERENCE as u32,
+                &preference as *const _ as *const _,
+                std::mem::size_of_val(&preference) as u32,
+            );
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn apply_win11_rounded_corners(_window: &WebviewWindow) {}
 
 fn config_file_path(app: &AppHandle) -> Option<PathBuf> {
     app.path()
@@ -130,8 +165,8 @@ fn is_allowed_desktop_url(raw: &str) -> Result<Url, String> {
     Ok(parsed)
 }
 
-fn position_bottom_right(window: &WebviewWindow) {
-    let target_monitor = window
+fn find_active_monitor(window: &WebviewWindow) -> Option<Monitor> {
+    window
         .cursor_position()
         .ok()
         .and_then(|cursor| {
@@ -149,9 +184,11 @@ fn position_bottom_right(window: &WebviewWindow) {
             })
         })
         .or_else(|| window.primary_monitor().ok().flatten())
-        .or_else(|| window.current_monitor().ok().flatten());
+        .or_else(|| window.current_monitor().ok().flatten())
+}
 
-    let Some(monitor) = target_monitor else {
+fn position_bottom_right(window: &WebviewWindow) {
+    let Some(monitor) = find_active_monitor(window) else {
         return;
     };
 
@@ -168,6 +205,29 @@ fn position_bottom_right(window: &WebviewWindow) {
 
     let x = work.position.x + (work.size.width as i32) - (w as i32) - margin;
     let y = work.position.y + (work.size.height as i32) - (h as i32) - margin;
+
+    let _ = window.set_size(PhysicalSize::new(w, h));
+    let _ = window.set_position(PhysicalPosition::new(x, y));
+}
+
+fn position_centered(window: &WebviewWindow) {
+    let Some(monitor) = find_active_monitor(window) else {
+        return;
+    };
+
+    let scale = monitor.scale_factor();
+    let work = monitor.work_area();
+    let margin = (READER_MARGIN_LOGICAL * scale).round() as i32;
+    let desired_w = (READER_LOGICAL_WIDTH * scale).round() as u32;
+    let desired_h = (READER_LOGICAL_HEIGHT * scale).round() as u32;
+
+    let max_w = work.size.width.saturating_sub((margin * 2) as u32).max(480);
+    let max_h = work.size.height.saturating_sub((margin * 2) as u32).max(380);
+    let w = desired_w.min(max_w);
+    let h = desired_h.min(max_h);
+
+    let x = work.position.x + ((work.size.width as i32 - w as i32) / 2);
+    let y = work.position.y + ((work.size.height as i32 - h as i32) / 2);
 
     let _ = window.set_size(PhysicalSize::new(w, h));
     let _ = window.set_position(PhysicalPosition::new(x, y));
@@ -195,17 +255,105 @@ fn hide_popup(app: &AppHandle) {
     }
 }
 
+fn hide_reader_window(app: &AppHandle, refocus_main: bool) {
+    if let Some(reader) = app.get_webview_window("reader") {
+        let _ = reader.hide();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.emit("athar:reader-closed", ());
+        if refocus_main && main.is_visible().unwrap_or(false) {
+            if let Ok(mut last) = app.state::<DesktopState>().last_shown_at.lock() {
+                *last = Some(Instant::now());
+            }
+            let _ = main.set_focus();
+        }
+    }
+}
+
 fn toggle_popup(app: &AppHandle) {
-    let Some(window) = app.get_webview_window("main") else {
-        return;
-    };
-    let visible = window.is_visible().unwrap_or(false);
-    let focused = window.is_focused().unwrap_or(false);
-    if visible && focused {
+    let main_vis = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    let main_foc = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_focused().ok())
+        .unwrap_or(false);
+    let reader_vis = app
+        .get_webview_window("reader")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    let reader_foc = app
+        .get_webview_window("reader")
+        .and_then(|w| w.is_focused().ok())
+        .unwrap_or(false);
+
+    if (main_vis && main_foc) || (reader_vis && reader_foc) {
+        hide_reader_window(app, false);
         hide_popup(app);
     } else {
-        show_popup(app, !visible);
+        show_popup(app, !main_vis);
     }
+}
+
+fn schedule_group_blur_check(app: AppHandle) {
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(FOCUS_TRANSFER_WAIT_MS));
+
+        let main_win = app.get_webview_window("main");
+        let reader_win = app.get_webview_window("reader");
+
+        let main_focused = main_win
+            .as_ref()
+            .and_then(|w| w.is_focused().ok())
+            .unwrap_or(false);
+        let reader_focused = reader_win
+            .as_ref()
+            .and_then(|w| w.is_focused().ok())
+            .unwrap_or(false);
+
+        // User switched between Athar's search popup and centered Reader — keep both open
+        if main_focused || reader_focused {
+            return;
+        }
+
+        let state = app.state::<DesktopState>();
+        let main_pinned = state.config.lock().map(|g| g.pinned).unwrap_or(false);
+        let reader_pinned = state.reader_pinned.lock().map(|g| *g).unwrap_or(false);
+
+        let main_within_grace = state
+            .last_shown_at
+            .lock()
+            .ok()
+            .and_then(|g| *g)
+            .map(|t| t.elapsed().as_millis() < BLUR_GRACE_MS)
+            .unwrap_or(false);
+        let reader_within_grace = state
+            .reader_last_shown_at
+            .lock()
+            .ok()
+            .and_then(|g| *g)
+            .map(|t| t.elapsed().as_millis() < BLUR_GRACE_MS)
+            .unwrap_or(false);
+
+        if !main_pinned && !main_within_grace {
+            if let Some(w) = main_win.as_ref() {
+                if w.is_visible().unwrap_or(false) {
+                    let _ = w.hide();
+                }
+            }
+        }
+        if !reader_pinned && !reader_within_grace {
+            if let Some(w) = reader_win.as_ref() {
+                if w.is_visible().unwrap_or(false) {
+                    let _ = w.hide();
+                    if let Some(m) = main_win.as_ref() {
+                        let _ = m.emit("athar:reader-closed", ());
+                    }
+                }
+            }
+        }
+    });
 }
 
 fn build_state_dto(app: &AppHandle) -> DesktopStateDto {
@@ -379,6 +527,54 @@ fn set_autostart(app: AppHandle, enabled: bool) -> Result<DesktopStateDto, Strin
     Ok(build_state_dto(&app))
 }
 
+#[tauri::command]
+fn open_reader(app: AppHandle, payload: serde_json::Value) {
+    {
+        let state = app.state::<DesktopState>();
+        if let Ok(mut guard) = state.reader_payload.lock() {
+            *guard = Some(payload.clone());
+        };
+        if let Ok(mut last) = state.reader_last_shown_at.lock() {
+            *last = Some(Instant::now());
+        };
+    }
+
+    if let Some(reader) = app.get_webview_window("reader") {
+        let already_visible = reader.is_visible().unwrap_or(false);
+        if !already_visible {
+            position_centered(&reader);
+        }
+        let _ = reader.unminimize();
+        let _ = reader.show();
+        let _ = reader.set_focus();
+        let _ = reader.emit("athar:reader-payload", &payload);
+    }
+}
+
+#[tauri::command]
+fn get_reader_payload(state: tauri::State<'_, DesktopState>) -> Option<serde_json::Value> {
+    state.reader_payload.lock().ok().and_then(|g| g.clone())
+}
+
+#[tauri::command]
+fn hide_reader(app: AppHandle) {
+    hide_reader_window(&app, true);
+}
+
+#[tauri::command]
+fn get_reader_pinned(state: tauri::State<'_, DesktopState>) -> bool {
+    state.reader_pinned.lock().map(|g| *g).unwrap_or(false)
+}
+
+#[tauri::command]
+fn set_reader_pinned(app: AppHandle, pinned: bool) -> bool {
+    let state = app.state::<DesktopState>();
+    if let Ok(mut guard) = state.reader_pinned.lock() {
+        *guard = pinned;
+    };
+    pinned
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -400,12 +596,28 @@ pub fn run() {
 
             app.manage(DesktopState::new(persisted));
 
+            // Apply native Windows 11 rounded corners to both frameless windows
+            if let Some(main_win) = app.get_webview_window("main") {
+                apply_win11_rounded_corners(&main_win);
+            }
+            if let Some(reader_win) = app.get_webview_window("reader") {
+                apply_win11_rounded_corners(&reader_win);
+            }
+
             // Register saved/default global shortcut (End)
             let _ = apply_global_shortcut(&handle, &initial_shortcut, initial_enabled);
 
             // Build system tray menu
-            let toggle_item = MenuItem::with_id(app, "toggle", "Show / Hide Athar", true, None::<&str>)?;
-            let pin_item = CheckMenuItem::with_id(app, "pin", "Pin Window", true, initial_pinned, None::<&str>)?;
+            let toggle_item =
+                MenuItem::with_id(app, "toggle", "Show / Hide Athar", true, None::<&str>)?;
+            let pin_item = CheckMenuItem::with_id(
+                app,
+                "pin",
+                "Pin Window",
+                true,
+                initial_pinned,
+                None::<&str>,
+            )?;
             let shortcut_item = CheckMenuItem::with_id(
                 app,
                 "shortcut",
@@ -452,7 +664,7 @@ pub fn run() {
                 .on_menu_event(|app_handle, event| match event.id.as_ref() {
                     "toggle" => toggle_popup(app_handle),
                     "pin" => {
-                        let next = {
+                        {
                             let state = app_handle.state::<DesktopState>();
                             let next_val = !state
                                 .config
@@ -462,10 +674,8 @@ pub fn run() {
                             if let Ok(mut cfg) = state.config.lock() {
                                 cfg.pinned = next_val;
                                 save_persisted_config(app_handle, &cfg);
-                            }
-                            next_val
-                        };
-                        let _ = next;
+                            };
+                        }
                         sync_tray_and_emit(app_handle);
                     }
                     "shortcut" => {
@@ -478,7 +688,7 @@ pub fn run() {
                             if let Ok(mut cfg) = app_handle.state::<DesktopState>().config.lock() {
                                 cfg.shortcut_enabled = next_enabled;
                                 save_persisted_config(app_handle, &cfg);
-                            }
+                            };
                         }
                         sync_tray_and_emit(app_handle);
                     }
@@ -520,25 +730,14 @@ pub fn run() {
         .on_window_event(|window, event| match event {
             WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
-                let _ = window.hide();
-            }
-            WindowEvent::Focused(false) => {
-                let app = window.app_handle();
-                let state = app.state::<DesktopState>();
-                let pinned = state.config.lock().map(|g| g.pinned).unwrap_or(false);
-                if pinned {
-                    return;
-                }
-                let within_grace = state
-                    .last_shown_at
-                    .lock()
-                    .ok()
-                    .and_then(|g| *g)
-                    .map(|t| t.elapsed().as_millis() < BLUR_GRACE_MS)
-                    .unwrap_or(false);
-                if !within_grace {
+                if window.label() == "reader" {
+                    hide_reader_window(window.app_handle(), true);
+                } else {
                     let _ = window.hide();
                 }
+            }
+            WindowEvent::Focused(false) => {
+                schedule_group_blur_check(window.app_handle().clone());
             }
             _ => {}
         })
@@ -549,6 +748,11 @@ pub fn run() {
             set_pinned,
             set_shortcut,
             set_autostart,
+            open_reader,
+            get_reader_payload,
+            hide_reader,
+            get_reader_pinned,
+            set_reader_pinned,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Athar desktop application");
@@ -562,11 +766,16 @@ mod tests {
     fn allowlist_permits_dorar_and_github_releases_only() {
         assert!(is_allowed_desktop_url("https://dorar.net/hadith/search?q=test").is_ok());
         assert!(is_allowed_desktop_url("https://www.dorar.net/h/abc/osoul").is_ok());
-        assert!(is_allowed_desktop_url("https://api.github.com/repos/eval19/athar/releases/latest").is_ok());
+        assert!(
+            is_allowed_desktop_url("https://api.github.com/repos/eval19/athar/releases/latest")
+                .is_ok()
+        );
 
         assert!(is_allowed_desktop_url("http://dorar.net/hadith/search?q=test").is_err());
         assert!(is_allowed_desktop_url("https://evil.example/dorar.net").is_err());
-        assert!(is_allowed_desktop_url("https://api.github.com/repos/other/repo/releases").is_err());
+        assert!(
+            is_allowed_desktop_url("https://api.github.com/repos/other/repo/releases").is_err()
+        );
         assert!(is_allowed_desktop_url("https://user:pass@dorar.net/").is_err());
     }
 }

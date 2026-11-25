@@ -39,6 +39,11 @@ describe('desktopShortcut', () => {
       expect(s.desktopShortcutEnabled.length).toBeGreaterThan(0);
       expect(s.desktopAutostart.length).toBeGreaterThan(0);
       expect(s.desktopShortcutError.length).toBeGreaterThan(0);
+      expect(s.readerOpen.length).toBeGreaterThan(0);
+      expect(s.readerVerdictTab.length).toBeGreaterThan(0);
+      expect(s.readerGradeTab.length).toBeGreaterThan(0);
+      expect(s.readerFontSmaller.length).toBeGreaterThan(0);
+      expect(s.readerFontLarger.length).toBeGreaterThan(0);
     }
   });
 });

@@ -1,4 +1,4 @@
-import { memo, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, type MouseEvent, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
   Check,
@@ -8,6 +8,7 @@ import {
   GitBranch,
   Layers,
   Loader2,
+  Maximize2,
   Share2,
   ShieldCheck,
   User,
@@ -42,6 +43,8 @@ interface HadithCardProps {
   onFetchOsoul?: (dorarId: string) => Promise<OsoulEntry[]>;
   onFetchAltSahih?: (dorarId: string) => Promise<HadithResult[]>;
   onFetchSimilar?: (dorarId: string) => Promise<HadithResult[]>;
+  onOpenReader?: (hadith: HadithResult, others: HadithResult[]) => void;
+  isReaderActive?: boolean;
 }
 
 const MATN_SIZE_CLASS: Record<ReadingScale, string> = {
@@ -65,6 +68,8 @@ export const HadithCard = memo(function HadithCard({
   onFetchOsoul,
   onFetchAltSahih,
   onFetchSimilar,
+  onOpenReader,
+  isReaderActive = false,
 }: HadithCardProps) {
   const [justCopied, setJustCopied] = useState(false);
   const [showGradeHelp, setShowGradeHelp] = useState(false);
@@ -244,11 +249,23 @@ export const HadithCard = memo(function HadithCard({
     }
   };
 
+  const handleCardClick = (event: MouseEvent<HTMLElement>) => {
+    if (!onOpenReader) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, a, summary, details, input')) return;
+    const selection = window.getSelection?.()?.toString().trim();
+    if (selection && selection.length > 0) return;
+    onOpenReader(hadith, others);
+  };
+
   return (
     <article
       ref={articleRef}
+      onClick={handleCardClick}
       className={`hadith-sheet scroll-mt-32 rounded-2xl bg-surface px-4 py-4 transition-colors sm:px-5 sm:py-5${
         deferred ? ' hadith-card-deferred' : ''
+      }${onOpenReader ? ' cursor-pointer hover:bg-elevated/40' : ''}${
+        isReaderActive ? ' ring-1 ring-brand' : ''
       }`}
     >
       {/* Row 1: Tappable authenticity pill + Sahabi narrator */}
@@ -449,6 +466,17 @@ export const HadithCard = memo(function HadithCard({
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5">
+            {onOpenReader && (
+              <button
+                type="button"
+                onClick={() => onOpenReader(hadith, others)}
+                aria-label={strings.readerOpen}
+                title={strings.readerOpen}
+                className="touch-target-y inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-brand active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCopy}
