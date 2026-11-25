@@ -293,6 +293,38 @@ export default function App() {
     };
   }, [settingsOpen, revealHeader]);
 
+  useLayoutEffect(() => {
+    if (!search.scrollCommand) return;
+    const { top, behavior } = search.scrollCommand;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const effectiveBehavior: ScrollBehavior =
+      behavior === 'smooth' && !prefersReducedMotion ? 'smooth' : 'auto';
+
+    const syncChromeToScroll = () => {
+      const actualY = window.scrollY;
+      scrollHeaderRef.current = createScrollHeaderState(actualY);
+      setHeaderHidden(false);
+      setPageScrolled(actualY > 12);
+    };
+
+    window.scrollTo({ top, behavior: effectiveBehavior });
+
+    if (effectiveBehavior === 'auto') {
+      syncChromeToScroll();
+      if (top > 0 && window.scrollY < top - 24) {
+        const rafId = window.requestAnimationFrame(() => {
+          window.scrollTo({ top, behavior: 'auto' });
+          syncChromeToScroll();
+        });
+        return () => window.cancelAnimationFrame(rafId);
+      }
+    } else if (top === 0) {
+      revealHeader();
+    }
+  }, [search.scrollCommand, revealHeader]);
+
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <div

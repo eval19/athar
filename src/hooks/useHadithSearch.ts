@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FilterMode, HadithResult, RecoveryMode } from '../domain/hadith';
 import { clearLearnedWords } from '../domain/learnedVocab';
+import {
+  createTabSession,
+  getTabSnapshot,
+  normalizeTabQueryKey,
+  resetTabScroll,
+  saveTabSnapshot,
+  type TabSessionStore,
+} from '../domain/tabSession';
 import { DorarProvider } from '../services/dorarClient';
 import {
   clearRecentSearches,
@@ -8,6 +16,12 @@ import {
   pushRecentSearch,
   removeRecentSearch,
 } from '../services/preferences';
+
+export interface ScrollCommand {
+  top: number;
+  behavior: 'auto' | 'smooth';
+  token: number;
+}
 
 const provider = new DorarProvider();
 
@@ -27,12 +41,28 @@ export function useHadithSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [scrollCommand, setScrollCommand] = useState<ScrollCommand | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const requestSeqRef = useRef(0);
+  const scrollTokenRef = useRef(0);
   const filterRef = useRef<FilterMode>(filter);
   const inputRef = useRef(inputValue);
   const skipNextDebounceRef = useRef(false);
+  const resettingHomeRef = useRef(false);
+  const tabSessionRef = useRef<TabSessionStore>(createTabSession());
+  const snapshotStateRef = useRef({
+    activeQuery,
+    effectiveQuery,
+    correctedFrom,
+    recoveryMode,
+    suggestions,
+    items,
+    page,
+    hasMore,
+    isLoading,
+    hasError,
+  });
   const debounceTimerRef = useRef<number | null>(null);
   const idleRecoveryTimerRef = useRef<number | null>(null);
   const runSearchRef = useRef<
@@ -46,6 +76,27 @@ export function useHadithSearch() {
 
   filterRef.current = filter;
   inputRef.current = inputValue;
+  snapshotStateRef.current = {
+    activeQuery,
+    effectiveQuery,
+    correctedFrom,
+    recoveryMode,
+    suggestions,
+    items,
+    page,
+    hasMore,
+    isLoading,
+    hasError,
+  };
+
+  const requestScroll = useCallback((top: number, behavior: 'auto' | 'smooth' = 'auto') => {
+    scrollTokenRef.current += 1;
+    setScrollCommand({
+      top: Math.max(0, Math.round(top)),
+      behavior,
+      token: scrollTokenRef.current,
+    });
+  }, []);
 
   const clearPendingTimers = useCallback(() => {
     if (debounceTimerRef.current !== null) {
@@ -61,6 +112,7 @@ export function useHadithSearch() {
   const resetResults = useCallback(() => {
     clearPendingTimers();
     abortRef.current?.abort();
+    tabSessionRef.current = createTabSession('');
     setActiveQuery('');
     setEffectiveQuery('');
     setCorrectedFrom(undefined);
@@ -71,7 +123,12 @@ export function useHadithSearch() {
     setHasError(false);
     setIsLoading(false);
     setIsLoadingMore(false);
-  }, [clearPendingTimers]);
+    if (resettingHomeRef.current) {
+      resettingHomeRef.current = false;
+    } else if (typeof window !== 'undefined' && window.scrollY > 0) {
+      requestScroll(0, 'auto');
+    }
+  }, [clearPendingTimers, requestScroll]);
 
   const executeSearch = useCallback(
     async (
@@ -96,8 +153,17 @@ export function useHadithSearch() {
       if (options.append) {
         setIsLoadingMore(true);
       } else {
+        if (
+          normalizeTabQueryKey(trimmed) !== tabSessionRef.current.queryKey ||
+          options.forceExact
+        ) {
+          tabSessionRef.current = createTabSession(trimmed);
+        }
         setIsLoading(true);
         setActiveQuery(trimmed);
+        if (typeof window !== 'undefined' && window.scrollY > 0) {
+          requestScroll(0, 'auto');
+        }
       }
 
       let deferLoadingClear = false;
@@ -161,7 +227,7 @@ export function useHadithSearch() {
         }
       }
     },
-    [clearPendingTimers, resetResults],
+    [clearPendingTimers, resetResults, requestScroll],
   );
 
   runSearchRef.current = executeSearch;
@@ -194,19 +260,71 @@ export function useHadithSearch() {
 
   const handleSetFilter = useCallback(
     (nextFilter: FilterMode) => {
-      if (nextFilter === filterRef.current) return;
+      // Tapping the already-active tab pill while scrolled down smoothly glides back to the top
+      if (nextFilter === filterRef.current) {
+        tabSessionRef.current = resetTabScroll(tabSessionRef.current, nextFilter);
+        if (typeof window !== 'undefined' && window.scrollY > 0) {
+          requestScroll(0, 'smooth');
+        }
+        return;
+      }
+
+      const prevFilter = filterRef.current;
+      const currentScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+      const snap = snapshotStateRef.current;
+      if (!snap.isLoading && !snap.hasError && snap.activeQuery.length >= 2) {
+        tabSessionRef.current = saveTabSnapshot(
+          tabSessionRef.current,
+          snap.activeQuery,
+          prevFilter,
+          {
+            items: snap.items,
+            page: snap.page,
+            hasMore: snap.hasMore,
+            effectiveQuery: snap.effectiveQuery,
+            correctedFrom: snap.correctedFrom,
+            recoveryMode: snap.recoveryMode,
+            suggestions: snap.suggestions,
+            scrollY: currentScrollY,
+          },
+        );
+      }
+
       filterRef.current = nextFilter;
       setFilter(nextFilter);
+
       const trimmed = inputRef.current.trim();
-      if (trimmed.length >= 2) {
-        void executeSearch(trimmed, nextFilter, 1);
+      if (trimmed.length < 2) return;
+
+      const restored = getTabSnapshot(tabSessionRef.current, trimmed, nextFilter);
+      if (restored) {
+        clearPendingTimers();
+        abortRef.current?.abort();
+        requestSeqRef.current += 1;
+        setHasError(false);
+        setIsLoading(false);
+        setIsLoadingMore(false);
+        setActiveQuery(trimmed);
+        setItems(restored.items);
+        setPage(restored.page);
+        setHasMore(restored.hasMore);
+        setEffectiveQuery(restored.effectiveQuery);
+        setCorrectedFrom(restored.correctedFrom);
+        setRecoveryMode(restored.recoveryMode);
+        setSuggestions(restored.suggestions);
+        requestScroll(restored.scrollY, 'auto');
+        return;
       }
+
+      requestScroll(0, 'auto');
+      void executeSearch(trimmed, nextFilter, 1);
     },
-    [executeSearch],
+    [clearPendingTimers, executeSearch, requestScroll],
   );
 
   const submitSearch = useCallback(
     (value: string) => {
+      tabSessionRef.current = createTabSession(value);
       void executeSearch(value, filterRef.current, 1);
     },
     [executeSearch],
@@ -217,6 +335,7 @@ export function useHadithSearch() {
       if (query !== inputRef.current) {
         skipNextDebounceRef.current = true;
       }
+      tabSessionRef.current = createTabSession(query);
       setInputValue(query);
       void executeSearch(query, filterRef.current, 1);
     },
@@ -228,6 +347,7 @@ export function useHadithSearch() {
       if (original !== inputRef.current) {
         skipNextDebounceRef.current = true;
       }
+      tabSessionRef.current = createTabSession(original);
       setInputValue(original);
       void executeSearch(original, filterRef.current, 1, { forceExact: true });
     },
@@ -252,10 +372,14 @@ export function useHadithSearch() {
   }, []);
 
   const resetHome = useCallback(() => {
+    resettingHomeRef.current = inputRef.current.trim().length > 0;
+    tabSessionRef.current = createTabSession('');
     setInputValue('');
     setFilter('all');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+    if (typeof window !== 'undefined' && window.scrollY > 0) {
+      requestScroll(0, 'smooth');
+    }
+  }, [requestScroll]);
 
   const fetchOsoul = useCallback(
     (dorarId: string) => provider.fetchOsoul(dorarId),
@@ -287,6 +411,7 @@ export function useHadithSearch() {
     isLoading,
     isLoadingMore,
     hasError,
+    scrollCommand,
     recentSearches,
     hasSearched: activeQuery.length >= 2,
     submitSearch,
