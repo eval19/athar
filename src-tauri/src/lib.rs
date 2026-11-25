@@ -15,8 +15,8 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use url::Url;
 
 const DEFAULT_SHORTCUT: &str = "End";
-const POPUP_LOGICAL_WIDTH: f64 = 420.0;
-const POPUP_LOGICAL_HEIGHT: f64 = 620.0;
+const POPUP_LOGICAL_WIDTH: f64 = 504.0;
+const POPUP_LOGICAL_HEIGHT: f64 = 806.0;
 const POPUP_MARGIN_LOGICAL: f64 = 14.0;
 const READER_LOGICAL_WIDTH: f64 = 760.0;
 const READER_LOGICAL_HEIGHT: f64 = 560.0;
