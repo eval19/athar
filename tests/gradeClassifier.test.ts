@@ -41,6 +41,49 @@ describe('classifyVerdict', () => {
     expect(classifyVerdict('فيه خطأ').bucket).toBe('daif');
   });
 
+  it('never misclassifies negated positive verdicts or negated chains as sahih or hasan (Issue #1)', () => {
+    expect(classifyVerdict('ليس بثابت').bucket).toBe('daif');
+    expect(classifyVerdict('غير ثابت').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بالثابت').bucket).toBe('daif');
+    expect(classifyVerdict('ليست بثابتة').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بالقوي').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بقوي').bucket).toBe('daif');
+    expect(classifyVerdict('غير قوي').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بحسن').bucket).toBe('daif');
+    expect(classifyVerdict('غير حسن').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بجيد').bucket).toBe('daif');
+    expect(classifyVerdict('غير جيد').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بصالح').bucket).toBe('daif');
+    expect(classifyVerdict('غير صالح').bucket).toBe('daif');
+    expect(classifyVerdict('غير مقبول').bucket).toBe('daif');
+    expect(classifyVerdict('ليس بمقبول').bucket).toBe('daif');
+    expect(classifyVerdict('لا يقوى').bucket).toBe('daif');
+    expect(classifyVerdict('لا يحسن').bucket).toBe('daif');
+
+    // Negated isnad/chain forms must map accurately to daif_isnad
+    expect(classifyVerdict('إسناده ليس بالقوي').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده ليس بقوي').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده غير قوي').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده ليس بثابت').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده لم يثبت').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده ليس بحسن').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('إسناده ليس بجيد').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('سنده ليس بالقوي').bucket).toBe('daif_isnad');
+    expect(classifyVerdict('سنده غير صحيح').bucket).toBe('daif_isnad');
+
+    // Non-grading exclusion notes must not trigger SAHIH_PATTERN
+    expect(classifyVerdict('ليس على شرط الشيخين').bucket).toBe('unknown');
+    expect(classifyVerdict('ليس في الصحيحين').bucket).toBe('unknown');
+    expect(classifyVerdict('لم يخرجاه في الصحيحين').bucket).toBe('unknown');
+
+    // Genuine positive verdicts paired with an exclusion note keep their positive grade
+    expect(classifyVerdict('صحيح الإسناد ولم يخرجاه في الصحيحين').bucket).toBe('sahih_isnad');
+    expect(classifyVerdict('حسن وليس بضعيف').bucket).toBe('hasan');
+
+    // Compound negated + corroborated verdict stays unknown (detailed ruling)
+    expect(classifyVerdict('ليس بثابت ولكن له شاهد').bucket).toBe('unknown');
+  });
+
   it('classifies severely weak rulings as very_weak', () => {
     expect(classifyVerdict('ضعيف جداً').bucket).toBe('very_weak');
     expect(classifyVerdict('ضعيف جدا').bucket).toBe('very_weak');
