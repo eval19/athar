@@ -314,7 +314,7 @@ export default function App() {
           />
         </div>
 
-        <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2.5 pt-2">
+        <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2 pt-1.5">
           <SearchBar
             value={search.inputValue}
             onChange={search.setInputValue}

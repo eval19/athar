@@ -20,7 +20,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="safe-pt safe-px">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 py-2">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 py-1">
         <button
           type="button"
           onClick={onResetHome}
