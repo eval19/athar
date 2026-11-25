@@ -275,7 +275,7 @@ const AR_STRINGS: AppStrings = {
   aboutSection: 'المصدر والأمانة العلمية',
   aboutCredit:
     'جميع نصوص الأحاديث وأحكام المحدثين مستمدة مباشرة من الموسوعة الحديثية — موقع الدرر السنية (dorar.net) دون تعديل.',
-  aboutVersion: 'الإصدار 1.4.2',
+  aboutVersion: 'الإصدار 1.4.3',
   updateAvailableTitle: (version) => `تحديث جديد متاح — الإصدار ${version}`,
   updateAvailableHint: 'يتوفر إصدار مستقر أحدث من تطبيق أَثَر.',
   downloadUpdate: 'تحميل التحديث',
@@ -468,7 +468,7 @@ const EN_STRINGS: AppStrings = {
   aboutSection: 'Source & Attribution',
   aboutCredit:
     'All hadith texts and scholar verdicts are retrieved live and verbatim from the Al-Dorar Al-Saniyyah Hadith Encyclopedia (dorar.net).',
-  aboutVersion: 'Version 1.4.2',
+  aboutVersion: 'Version 1.4.3',
   updateAvailableTitle: (version) => `New update available — v${version}`,
   updateAvailableHint: 'A newer stable version of Athar is ready to download.',
   downloadUpdate: 'Download update',
