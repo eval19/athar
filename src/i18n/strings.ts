@@ -99,6 +99,16 @@ export interface AppStrings {
   readerGradeTab: string;
   readerFontSmaller: string;
   readerFontLarger: string;
+  readerOtherRulingsTab: (count: number) => string;
+  readerPrevHadith: string;
+  readerNextHadith: string;
+  readerScholarsVerdictLabel: string;
+  readerPositionLabel: (current: number, total: number) => string;
+  readerToggleTashkeel: string;
+  readerOpenDorar: string;
+  readerResizeDivider: string;
+  readerCautionSevere: string;
+  readerJumpAltSahih: string;
 }
 
 const AR_STRINGS: AppStrings = {
@@ -314,6 +324,16 @@ const AR_STRINGS: AppStrings = {
   readerGradeTab: 'شرح الدرجة',
   readerFontSmaller: 'تصغير الخط',
   readerFontLarger: 'تكبير الخط',
+  readerOtherRulingsTab: (count) => `أحكام أخرى (${count})`,
+  readerPrevHadith: 'الحديث السابق',
+  readerNextHadith: 'الحديث التالي',
+  readerScholarsVerdictLabel: 'خلاصة الحكم والمحدث',
+  readerPositionLabel: (current, total) => `${current} من ${total}`,
+  readerToggleTashkeel: 'إظهار أو إخفاء التشكيل',
+  readerOpenDorar: 'فتح في الدرر السنية',
+  readerResizeDivider: 'اسحب لتغيير الحجم أو انقر مرتين لإعادة الضبط',
+  readerCautionSevere: 'تنبيه: هذا الحديث لا يصح — راجع حكم المحدث أدناه.',
+  readerJumpAltSahih: 'عرض الصحيح البديل',
 };
 
 const EN_STRINGS: AppStrings = {
@@ -521,6 +541,16 @@ const EN_STRINGS: AppStrings = {
   readerGradeTab: 'Grade Meaning',
   readerFontSmaller: 'Smaller text',
   readerFontLarger: 'Larger text',
+  readerOtherRulingsTab: (count) => `Other Rulings (${count})`,
+  readerPrevHadith: 'Previous hadith',
+  readerNextHadith: 'Next hadith',
+  readerScholarsVerdictLabel: 'Scholar Verdict',
+  readerPositionLabel: (current, total) => `${current} of ${total}`,
+  readerToggleTashkeel: 'Toggle diacritics (Tashkeel)',
+  readerOpenDorar: 'Open on Al-Dorar',
+  readerResizeDivider: 'Drag to resize or double-click to reset',
+  readerCautionSevere: 'Caution: This narration is unauthentic — review the scholar verdict below.',
+  readerJumpAltSahih: 'View Authentic Alternative',
 };
 
 export function getStrings(locale: Locale): AppStrings {

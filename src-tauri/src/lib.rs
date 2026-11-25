@@ -575,6 +575,57 @@ fn set_reader_pinned(app: AppHandle, pinned: bool) -> bool {
     pinned
 }
 
+fn normalize_reader_step(delta: i32) -> i32 {
+    if delta < 0 {
+        -1
+    } else {
+        1
+    }
+}
+
+#[tauri::command]
+fn step_reader(app: AppHandle, delta: i32) {
+    let step = normalize_reader_step(delta);
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.emit("athar:reader-step", step);
+    }
+}
+
+fn build_dorar_hadith_url(dorar_id: &str) -> Result<String, String> {
+    let bytes = dorar_id.as_bytes();
+    if bytes.is_empty() || bytes.len() > 64 {
+        return Err("Invalid Al-Dorar hadith ID length".to_string());
+    }
+    if !bytes
+        .iter()
+        .all(|b| b.is_ascii_alphanumeric() || *b == b'_' || *b == b'-')
+    {
+        return Err("Invalid characters in Al-Dorar hadith ID".to_string());
+    }
+    Ok(format!("https://dorar.net/h/{dorar_id}"))
+}
+
+#[tauri::command]
+fn open_dorar_hadith(dorar_id: String) -> Result<(), String> {
+    let url = build_dorar_hadith_url(&dorar_id)?;
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", &url])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map(|_| ())
+            .map_err(|err| format!("Failed to open Al-Dorar link: {err}"))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = url;
+        Err("External browser launch is only supported on Windows desktop".into())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -753,6 +804,8 @@ pub fn run() {
             hide_reader,
             get_reader_pinned,
             set_reader_pinned,
+            step_reader,
+            open_dorar_hadith,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Athar desktop application");
@@ -777,5 +830,42 @@ mod tests {
             is_allowed_desktop_url("https://api.github.com/repos/other/repo/releases").is_err()
         );
         assert!(is_allowed_desktop_url("https://user:pass@dorar.net/").is_err());
+    }
+
+    #[test]
+    fn normalize_reader_step_clamps_to_unit_direction() {
+        assert_eq!(normalize_reader_step(-5), -1);
+        assert_eq!(normalize_reader_step(-1), -1);
+        assert_eq!(normalize_reader_step(0), 1);
+        assert_eq!(normalize_reader_step(1), 1);
+        assert_eq!(normalize_reader_step(10), 1);
+    }
+
+    #[test]
+    fn build_dorar_hadith_url_validates_strictly() {
+        assert_eq!(
+            build_dorar_hadith_url("12345").as_deref(),
+            Ok("https://dorar.net/h/12345")
+        );
+        assert_eq!(
+            build_dorar_hadith_url("abc_12-XY").as_deref(),
+            Ok("https://dorar.net/h/abc_12-XY")
+        );
+        let max_id = "a".repeat(64);
+        assert_eq!(
+            build_dorar_hadith_url(&max_id).as_deref(),
+            Ok(format!("https://dorar.net/h/{max_id}").as_str())
+        );
+
+        assert!(build_dorar_hadith_url("").is_err());
+        assert!(build_dorar_hadith_url(&"a".repeat(65)).is_err());
+        assert!(build_dorar_hadith_url("../x").is_err());
+        assert!(build_dorar_hadith_url("12?a=1").is_err());
+        assert!(build_dorar_hadith_url("12#x").is_err());
+        assert!(build_dorar_hadith_url(" 123").is_err());
+        assert!(build_dorar_hadith_url("123 ").is_err());
+        assert!(build_dorar_hadith_url("12 3").is_err());
+        assert!(build_dorar_hadith_url("https://evil.com").is_err());
+        assert!(build_dorar_hadith_url("حديث").is_err());
     }
 }

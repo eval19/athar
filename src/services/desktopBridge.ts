@@ -17,6 +17,8 @@ export interface ReaderPayload {
   locale: Locale;
   readingScale: ReadingScale;
   themePref: ThemePreference;
+  currentIndex?: number;
+  totalCount?: number;
 }
 
 export const DEFAULT_DESKTOP_STATE: DesktopState = {
@@ -118,6 +120,16 @@ export async function setDesktopReaderPinned(pinned: boolean): Promise<boolean> 
   return invoke<boolean>('set_reader_pinned', { pinned });
 }
 
+export async function stepDesktopReader(delta: -1 | 1): Promise<void> {
+  if (!isTauriDesktop()) return;
+  await invoke('step_reader', { delta });
+}
+
+export async function openDorarHadithExternal(dorarId: string): Promise<void> {
+  if (!isTauriDesktop() || !dorarId.trim()) return;
+  await invoke('open_dorar_hadith', { dorarId });
+}
+
 export async function listenReaderPayload(
   callback: (payload: ReaderPayload) => void,
 ): Promise<UnlistenFn> {
@@ -130,4 +142,13 @@ export async function listenReaderPayload(
 export async function listenReaderClosed(callback: () => void): Promise<UnlistenFn> {
   if (!isTauriDesktop()) return () => {};
   return listen('athar:reader-closed', () => callback());
+}
+
+export async function listenReaderStep(
+  callback: (delta: -1 | 1) => void,
+): Promise<UnlistenFn> {
+  if (!isTauriDesktop()) return () => {};
+  return listen<number>('athar:reader-step', (event) => {
+    callback(event.payload < 0 ? -1 : 1);
+  });
 }

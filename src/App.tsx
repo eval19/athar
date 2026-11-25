@@ -36,6 +36,7 @@ import {
   listenDesktopState,
   listenFocusSearch,
   listenReaderClosed,
+  listenReaderStep,
   openDesktopReader,
   setDesktopAutostart,
   setDesktopPinned,
@@ -74,6 +75,33 @@ import {
   ResultsSkeleton,
 } from './components/ResultStates';
 import { SearchBar } from './components/SearchBar';
+
+interface ReaderSyncContext {
+  effectiveQuery: string;
+  activeQuery: string;
+  locale: Locale;
+  readingScale: ReadingScale;
+  themePref: ThemePreference;
+}
+
+function pushDesktopReaderPayload(
+  hadith: HadithResult,
+  others: HadithResult[],
+  currentIndex: number | undefined,
+  totalCount: number,
+  ctx: ReaderSyncContext,
+): void {
+  void openDesktopReader({
+    hadith,
+    others,
+    highlightQuery: ctx.effectiveQuery || ctx.activeQuery,
+    locale: ctx.locale,
+    readingScale: ctx.readingScale,
+    themePref: ctx.themePref,
+    currentIndex,
+    totalCount,
+  });
+}
 
 export default function App() {
   const [locale, setLocale] = useState<Locale>(() => loadLocale());
@@ -162,6 +190,24 @@ export default function App() {
     () => groupDuplicateHadiths(search.items),
     [search.items],
   );
+  const readerContextRef = useRef({
+    groupedItems,
+    activeReaderId,
+    effectiveQuery: search.effectiveQuery,
+    activeQuery: search.activeQuery,
+    locale,
+    readingScale,
+    themePref,
+  });
+  readerContextRef.current = {
+    groupedItems,
+    activeReaderId,
+    effectiveQuery: search.effectiveQuery,
+    activeQuery: search.activeQuery,
+    locale,
+    readingScale,
+    themePref,
+  };
 
   const showToast = useCallback((message: string) => {
     setToastMessage(message);
@@ -218,6 +264,25 @@ export default function App() {
     const unlistenReaderClosed = listenReaderClosed(() => {
       if (active) setActiveReaderId(null);
     });
+    const unlistenReaderStep = listenReaderStep((delta) => {
+      if (!active) return;
+      const ctx = readerContextRef.current;
+      if (!ctx.activeReaderId || ctx.groupedItems.length === 0) return;
+      const idx = ctx.groupedItems.findIndex((group) => group.primary.id === ctx.activeReaderId);
+      if (idx < 0) return;
+      const nextIdx = idx + delta;
+      if (nextIdx < 0 || nextIdx >= ctx.groupedItems.length) return;
+      const nextGroup = ctx.groupedItems[nextIdx];
+      ctx.activeReaderId = nextGroup.primary.id;
+      setActiveReaderId(nextGroup.primary.id);
+      pushDesktopReaderPayload(
+        nextGroup.primary,
+        nextGroup.others,
+        nextIdx,
+        ctx.groupedItems.length,
+        ctx,
+      );
+    });
 
     return () => {
       active = false;
@@ -225,6 +290,7 @@ export default function App() {
       void unlistenState.then((fn) => fn());
       void unlistenFocus.then((fn) => fn());
       void unlistenReaderClosed.then((fn) => fn());
+      void unlistenReaderStep.then((fn) => fn());
     };
   }, [isDesktop, revealHeader]);
 
@@ -263,16 +329,22 @@ export default function App() {
   const handleOpenReader = useCallback(
     (hadith: HadithResult, others: HadithResult[]) => {
       setActiveReaderId(hadith.id);
-      void openDesktopReader({
+      const idx = groupedItems.findIndex((group) => group.primary.id === hadith.id);
+      pushDesktopReaderPayload(
         hadith,
         others,
-        highlightQuery: search.effectiveQuery || search.activeQuery,
-        locale,
-        readingScale,
-        themePref,
-      });
+        idx >= 0 ? idx : undefined,
+        groupedItems.length,
+        {
+          effectiveQuery: search.effectiveQuery,
+          activeQuery: search.activeQuery,
+          locale,
+          readingScale,
+          themePref,
+        },
+      );
     },
-    [locale, readingScale, search.activeQuery, search.effectiveQuery, themePref],
+    [groupedItems, locale, readingScale, search.activeQuery, search.effectiveQuery, themePref],
   );
 
   useEffect(() => {

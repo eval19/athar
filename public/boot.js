@@ -15,6 +15,9 @@ try {
   }
   if ('__TAURI_INTERNALS__' in window) {
     document.documentElement.setAttribute('data-platform', 'desktop');
+    if (new URLSearchParams(window.location.search).get('view') === 'reader') {
+      document.documentElement.setAttribute('data-view', 'reader');
+    }
   }
 } catch (_) {
   // Ignore storage restrictions during boot

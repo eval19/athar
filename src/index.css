@@ -702,6 +702,10 @@ html[data-platform='desktop'] {
   scroll-padding-top: 8.5rem;
 }
 
+html[data-platform='desktop'][data-view='reader'] {
+  font-size: 15px;
+}
+
 html[data-platform='desktop'],
 html[data-platform='desktop'] body,
 html[data-platform='desktop'] #root {
@@ -789,4 +793,79 @@ html[data-platform='desktop'] .matn-scale-lg {
 
 html[data-platform='desktop'] article.hadith-sheet {
   padding: 0.85rem 0.95rem;
+}
+
+/* Crisp card separation on desktop (especially 60%/40% Reader panes in dark mode) */
+html[data-platform='desktop'] .hadith-sheet {
+  box-shadow:
+    0 1px 3px rgba(27, 24, 18, 0.06),
+    0 0 0 1px rgba(27, 24, 18, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-platform='desktop']:not([data-theme='light']) .desktop-window-shell {
+    border-color: rgba(241, 238, 231, 0.22);
+  }
+
+  html[data-platform='desktop']:not([data-theme='light']) .hadith-sheet {
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.36),
+      0 0 0 1px rgba(241, 238, 231, 0.14);
+  }
+}
+
+html[data-platform='desktop'][data-theme='dark'] .desktop-window-shell {
+  border-color: rgba(241, 238, 231, 0.22);
+}
+
+html[data-platform='desktop'][data-theme='dark'] .hadith-sheet {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.36),
+    0 0 0 1px rgba(241, 238, 231, 0.14);
+}
+
+/* Slim 6px rounded desktop scrollbars matching theme border/subtle tokens */
+html[data-platform='desktop'],
+html[data-platform='desktop'] body {
+  scrollbar-color: auto;
+  scrollbar-width: auto;
+}
+
+html[data-platform='desktop'] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html[data-platform='desktop'] ::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+html[data-platform='desktop'] ::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 9999px;
+}
+
+html[data-platform='desktop'] ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-tertiary);
+}
+
+html[data-platform='desktop'] .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Subtle 120ms opacity-only page-flip transition in Desktop Reader */
+@keyframes readerContentFade {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reader-content-fade {
+    animation: readerContentFade 120ms ease-out both;
+  }
 }
