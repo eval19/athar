@@ -45,6 +45,7 @@ export interface AppStrings {
   matchBelowPreview: string;
   loadMore: string;
   loadingMore: string;
+  loadMoreError: string;
   endOfResults: string;
   resultsCount: (count: number, hasMore: boolean) => string;
   correctedBanner: (effective: string, original: string) => string;
@@ -222,6 +223,7 @@ const AR_STRINGS: AppStrings = {
   matchBelowPreview: 'الكلمة في بقية النص',
   loadMore: 'عرض المزيد من الأحاديث',
   loadingMore: 'جاري التحميل…',
+  loadMoreError: 'تعذّر تحميل المزيد من الأحاديث، حاول مرة أخرى.',
   endOfResults: 'نهاية النتائج المتاحة',
   resultsCount: (count, hasMore) => {
     const base =
@@ -422,6 +424,7 @@ const EN_STRINGS: AppStrings = {
   matchBelowPreview: 'Match further down',
   loadMore: 'Load more hadiths',
   loadingMore: 'Loading…',
+  loadMoreError: 'Could not load more hadiths. Please try again.',
   endOfResults: 'End of available results',
   resultsCount: (count, hasMore) => {
     const base = count === 1 ? '1 result' : `${count} results`;
