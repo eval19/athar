@@ -194,6 +194,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isDesktop) return;
+    document.documentElement.setAttribute('data-platform', 'desktop');
     let active = true;
     void getDesktopState().then((st) => {
       if (active) setDesktopState(st);
@@ -210,6 +211,7 @@ export default function App() {
 
     return () => {
       active = false;
+      document.documentElement.removeAttribute('data-platform');
       void unlistenState.then((fn) => fn());
       void unlistenFocus.then((fn) => fn());
     };
@@ -346,6 +348,11 @@ export default function App() {
       if (rafId !== 0) return;
       rafId = window.requestAnimationFrame(() => {
         rafId = 0;
+        if (isDesktop) {
+          setHeaderHidden(false);
+          setPageScrolled(window.scrollY > 4);
+          return;
+        }
         const next = stepScrollHeader(scrollHeaderRef.current, {
           scrollY: window.scrollY,
           viewportHeight: window.innerHeight,
@@ -363,7 +370,7 @@ export default function App() {
       window.removeEventListener('scroll', handleScroll);
       if (rafId !== 0) window.cancelAnimationFrame(rafId);
     };
-  }, [settingsOpen, revealHeader]);
+  }, [isDesktop, settingsOpen, revealHeader]);
 
   useLayoutEffect(() => {
     if (!search.scrollCommand) return;

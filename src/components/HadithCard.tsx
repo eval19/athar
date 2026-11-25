@@ -45,9 +45,9 @@ interface HadithCardProps {
 }
 
 const MATN_SIZE_CLASS: Record<ReadingScale, string> = {
-  sm: 'text-[1.125rem] leading-[1.95]',
-  md: 'text-[1.3125rem] leading-[2.05]',
-  lg: 'text-[1.5rem] leading-[2.1]',
+  sm: 'matn-scale-sm text-[1.125rem] leading-[1.95]',
+  md: 'matn-scale-md text-[1.3125rem] leading-[2.05]',
+  lg: 'matn-scale-lg text-[1.5rem] leading-[2.1]',
 };
 
 export const HadithCard = memo(function HadithCard({

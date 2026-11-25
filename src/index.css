@@ -695,3 +695,70 @@ dialog[open]:where(:not([data-closing]))::backdrop {
     transition-behavior: allow-discrete;
   }
 }
+
+/* Desktop Quick-Search Popup (Tauri Windows): compact PC typography & tear-free scrolling */
+html[data-platform='desktop'] {
+  font-size: 13.5px;
+  scroll-padding-top: 8.5rem;
+}
+
+html[data-platform='desktop'] body {
+  overflow-x: hidden;
+  border: 1px solid var(--border-strong);
+  min-height: 100dvh;
+}
+
+/* Keep sticky header crisp and stable on WebView2 (no translate3d/backdrop-filter banding or collapse slicing) */
+html[data-platform='desktop'] .top-chrome-shell {
+  transform: none;
+  background-color: var(--bg-canvas);
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms ease-out;
+}
+
+html[data-platform='desktop'] .top-chrome-shell::after {
+  display: none;
+}
+
+html[data-platform='desktop'] .top-chrome-scrolled {
+  background-color: var(--bg-canvas);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+html[data-platform='desktop'] .top-header-cap,
+html[data-platform='desktop'] .top-chrome-scrolled .top-dock-cap {
+  background: transparent;
+}
+
+html[data-platform='desktop'] .top-chrome-collapsed {
+  transform: none;
+}
+
+/* Avoid WebView2 scrollbar thumb jumps and reflow pops during mouse-wheel scrolling */
+html[data-platform='desktop'] .hadith-card-deferred {
+  content-visibility: visible;
+  contain-intrinsic-block-size: auto;
+}
+
+/* Smaller, desktop-proportioned Hadith Matn & card density */
+html[data-platform='desktop'] .matn-scale-sm {
+  font-size: 0.96rem;
+  line-height: 1.82;
+}
+
+html[data-platform='desktop'] .matn-scale-md {
+  font-size: 1.08rem;
+  line-height: 1.9;
+}
+
+html[data-platform='desktop'] .matn-scale-lg {
+  font-size: 1.24rem;
+  line-height: 1.95;
+}
+
+html[data-platform='desktop'] article.hadith-sheet {
+  padding: 0.85rem 0.95rem;
+}
