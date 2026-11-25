@@ -1,7 +1,7 @@
 import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { Info, Loader2 } from 'lucide-react';
+import { Info, Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import {
   getSettingsUpdate,
   getVisibleLandingUpdate,
@@ -462,19 +462,38 @@ export default function App() {
               ))}
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col items-center gap-2.5">
               {search.hasMore ? (
-                <button
-                  type="button"
-                  onClick={search.loadMore}
-                  disabled={search.isLoadingMore}
-                  className="hadith-sheet inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  {search.isLoadingMore && (
-                    <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />
+                <>
+                  {search.hasLoadMoreError && !search.isLoadingMore && (
+                    <p
+                      role="alert"
+                      className="panel-reveal inline-flex items-center gap-1.5 text-center text-xs font-medium text-muted"
+                    >
+                      <WifiOff className="h-3.5 w-3.5 shrink-0 text-faint" aria-hidden="true" />
+                      <span>{strings.loadMoreError}</span>
+                    </p>
                   )}
-                  <span>{search.isLoadingMore ? strings.loadingMore : strings.loadMore}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={search.loadMore}
+                    disabled={search.isLoadingMore}
+                    className="hadith-sheet inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    {search.isLoadingMore ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />
+                    ) : search.hasLoadMoreError ? (
+                      <RefreshCw className="h-4 w-4 text-brand" aria-hidden="true" />
+                    ) : null}
+                    <span>
+                      {search.isLoadingMore
+                        ? strings.loadingMore
+                        : search.hasLoadMoreError
+                          ? strings.retry
+                          : strings.loadMore}
+                    </span>
+                  </button>
+                </>
               ) : (
                 <p className="py-2 text-xs text-faint">{strings.endOfResults}</p>
               )}

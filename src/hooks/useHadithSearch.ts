@@ -2,6 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FilterMode, HadithResult, RecoveryMode } from '../domain/hadith';
 import { clearLearnedWords } from '../domain/learnedVocab';
 import {
+  beginLoadMore,
+  finishLoadMoreError,
+  finishLoadMoreSuccess,
+  INITIAL_PAGINATION_STATUS,
+  resetPaginationStatus,
+  type PaginationStatus,
+} from '../domain/paginationState';
+import {
   createTabSession,
   getTabSnapshot,
   normalizeTabQueryKey,
@@ -39,7 +47,7 @@ export function useHadithSearch() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pagination, setPagination] = useState<PaginationStatus>(INITIAL_PAGINATION_STATUS);
   const [hasError, setHasError] = useState(false);
   const [scrollCommand, setScrollCommand] = useState<ScrollCommand | null>(null);
 
@@ -122,7 +130,7 @@ export function useHadithSearch() {
     setHasMore(false);
     setHasError(false);
     setIsLoading(false);
-    setIsLoadingMore(false);
+    setPagination(resetPaginationStatus());
     if (resettingHomeRef.current) {
       resettingHomeRef.current = false;
     } else if (typeof window !== 'undefined' && window.scrollY > 0) {
@@ -151,8 +159,9 @@ export function useHadithSearch() {
 
       setHasError(false);
       if (options.append) {
-        setIsLoadingMore(true);
+        setPagination(beginLoadMore());
       } else {
+        setPagination(resetPaginationStatus());
         if (
           normalizeTabQueryKey(trimmed) !== tabSessionRef.current.queryKey ||
           options.forceExact
@@ -195,6 +204,7 @@ export function useHadithSearch() {
             const seen = new Set(prev.map((item) => item.id));
             return [...prev, ...res.items.filter((item) => !seen.has(item.id))];
           });
+          setPagination(finishLoadMoreSuccess());
         } else {
           setItems(res.items);
           setEffectiveQuery(res.effectiveQuery);
@@ -209,11 +219,14 @@ export function useHadithSearch() {
         setPage(res.page);
         setHasMore(res.hasMore);
       } catch (err) {
-        if (controller.signal.aborted || seq !== requestSeqRef.current) return;
+        const abortedOrStale = controller.signal.aborted || seq !== requestSeqRef.current;
+        if (abortedOrStale) return;
         if (import.meta.env.DEV) {
           console.error('Search error:', err);
         }
-        if (!options.append) {
+        if (options.append) {
+          setPagination((prev) => finishLoadMoreError(prev, false));
+        } else {
           setItems([]);
           setHasMore(false);
           setHasError(true);
@@ -223,7 +236,9 @@ export function useHadithSearch() {
           if (!deferLoadingClear) {
             setIsLoading(false);
           }
-          setIsLoadingMore(false);
+          if (options.append) {
+            setPagination((prev) => (prev.isLoadingMore ? finishLoadMoreSuccess() : prev));
+          }
         }
       }
     },
@@ -303,7 +318,7 @@ export function useHadithSearch() {
         requestSeqRef.current += 1;
         setHasError(false);
         setIsLoading(false);
-        setIsLoadingMore(false);
+        setPagination(resetPaginationStatus());
         setActiveQuery(trimmed);
         setItems(restored.items);
         setPage(restored.page);
@@ -355,12 +370,12 @@ export function useHadithSearch() {
   );
 
   const loadMore = useCallback(() => {
-    if (isLoadingMore || !hasMore || !effectiveQuery) return;
+    if (pagination.isLoadingMore || !hasMore || !effectiveQuery) return;
     void executeSearch(effectiveQuery, filterRef.current, page + 1, {
       append: true,
       forceExact: true,
     });
-  }, [isLoadingMore, hasMore, effectiveQuery, executeSearch, page]);
+  }, [pagination.isLoadingMore, hasMore, effectiveQuery, executeSearch, page]);
 
   const removeRecent = useCallback((term: string) => {
     setRecentSearches((prev) => removeRecentSearch(prev, term));
@@ -409,7 +424,8 @@ export function useHadithSearch() {
     items,
     hasMore,
     isLoading,
-    isLoadingMore,
+    isLoadingMore: pagination.isLoadingMore,
+    hasLoadMoreError: pagination.hasLoadMoreError,
     hasError,
     scrollCommand,
     recentSearches,
