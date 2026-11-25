@@ -104,6 +104,39 @@ function assertSafeResponseSize(body: string): string {
   return body;
 }
 
+function createAbortError(): Error {
+  const err = new Error('The operation was aborted.');
+  err.name = 'AbortError';
+  return err;
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+}
+
+function raceWithAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  throwIfAborted(signal);
+  if (!signal) return promise;
+
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(createAbortError());
+    signal.addEventListener('abort', onAbort, { once: true });
+
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (err) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(err);
+      },
+    );
+  });
+}
+
 const CACHE_MAX_ENTRIES = 30;
 const DETAIL_CACHE_MAX_ENTRIES = 40;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -171,17 +204,22 @@ export function buildDorarWebSearchUrl(
 }
 
 async function defaultHttpFetch(url: string, signal?: AbortSignal): Promise<string> {
+  throwIfAborted(signal);
   assertAllowedDorarUrl(url);
 
   if (Capacitor.isNativePlatform()) {
-    const response = await CapacitorHttp.get({
-      url,
-      headers: {
-        Accept: 'text/html, application/json, text/plain, */*',
-      },
-      connectTimeout: 12000,
-      readTimeout: 15000,
-    });
+    const response = await raceWithAbort(
+      CapacitorHttp.get({
+        url,
+        headers: {
+          Accept: 'text/html, application/json, text/plain, */*',
+        },
+        connectTimeout: 12000,
+        readTimeout: 15000,
+      }),
+      signal,
+    );
+    throwIfAborted(signal);
     assertAllowedRedirectUrl(response.url, true);
     if (response.status < 200 || response.status >= 300) {
       throw new Error(`Dorar API error (${response.status})`);
@@ -346,6 +384,7 @@ export class DorarProvider implements HadithProvider {
     signal?: AbortSignal,
     searchType?: 'w' | 'a',
   ): Promise<{ items: HadithResult[]; hasMore: boolean }> {
+    throwIfAborted(signal);
     if (this.useRichWebSearch) {
       try {
         const webUrl = buildDorarWebSearchUrl(this.webBase, {
@@ -355,6 +394,7 @@ export class DorarProvider implements HadithProvider {
           searchType,
         });
         const html = await this.fetcher(webUrl, signal);
+        throwIfAborted(signal);
         const parsed = parseDorarWebSearchHtml(html, page);
         if (parsed.recognized) {
           return { items: parsed.items, hasMore: parsed.hasMore };
@@ -365,6 +405,7 @@ export class DorarProvider implements HadithProvider {
       }
     }
 
+    throwIfAborted(signal);
     const apiUrl = buildDorarSearchUrl(this.apiEndpoint, {
       query,
       filter,
@@ -372,6 +413,7 @@ export class DorarProvider implements HadithProvider {
       searchType,
     });
     const body = await this.fetcher(apiUrl, signal);
+    throwIfAborted(signal);
     return parseDorarApiResponse(body);
   }
 
@@ -391,6 +433,7 @@ export class DorarProvider implements HadithProvider {
     let hasMore = false;
 
     for (let step = 0; step < maxPages; step++) {
+      throwIfAborted(signal);
       const parsed = await this.fetchSinglePage(
         query,
         filter,
@@ -398,6 +441,7 @@ export class DorarProvider implements HadithProvider {
         signal,
         searchType,
       );
+      throwIfAborted(signal);
 
       rawCount += parsed.items.length;
       lastPage = currentPage;
@@ -426,6 +470,7 @@ export class DorarProvider implements HadithProvider {
   }
 
   async search(request: SearchRequest): Promise<SearchResponse> {
+    throwIfAborted(request.signal);
     const rawQuery = request.query.trim().slice(0, MAX_QUERY_LENGTH).trim();
     if (!rawQuery) {
       return {
@@ -448,6 +493,7 @@ export class DorarProvider implements HadithProvider {
         request.page,
         request.signal,
       );
+      throwIfAborted(request.signal);
       if (request.forceExact && request.page === 1) {
         const exactKey = `${rawQuery}|${request.filter}`;
         if (directPass.rawCount === 0) {
@@ -483,6 +529,7 @@ export class DorarProvider implements HadithProvider {
       searchType: 'w' | 'a' = 'w',
       maxPages = MAX_BACKFILL_PAGES,
     ): Promise<FetchBackfillResult | null> => {
+      throwIfAborted(request.signal);
       const normalized = query.trim();
       if (!normalized) return null;
       const attemptKey = `${searchType}|${normalized}`;
@@ -499,6 +546,7 @@ export class DorarProvider implements HadithProvider {
     };
 
     const cacheAndReturn = (response: SearchResponse): SearchResponse => {
+      throwIfAborted(request.signal);
       if (response.items.length > 0) {
         learnWordsFromTexts(response.items.map((item) => item.text));
       }
@@ -660,11 +708,13 @@ export class DorarProvider implements HadithProvider {
 
   async fetchOsoul(dorarId: string, signal?: AbortSignal): Promise<OsoulEntry[]> {
     if (!isValidDorarId(dorarId)) return [];
+    throwIfAborted(signal);
     const cached = readLru(this.osoulCache, dorarId);
     if (cached) return cached;
 
     const url = `${this.webBase}/h/${encodeURIComponent(dorarId)}/osoul`;
     const html = await this.fetcher(url, signal);
+    throwIfAborted(signal);
     const entries = parseDorarOsoulHtml(html);
     writeLru(this.osoulCache, dorarId, entries, DETAIL_CACHE_MAX_ENTRIES);
     return entries;
@@ -672,12 +722,14 @@ export class DorarProvider implements HadithProvider {
 
   async fetchAltSahih(dorarId: string, signal?: AbortSignal): Promise<HadithResult[]> {
     if (!isValidDorarId(dorarId)) return [];
+    throwIfAborted(signal);
     const cacheKey = `alt:${dorarId}`;
     const cached = readLru(this.relatedCache, cacheKey);
     if (cached) return cached;
 
     const url = `${this.webBase}/h/${encodeURIComponent(dorarId)}?alts=1`;
     const html = await this.fetcher(url, signal);
+    throwIfAborted(signal);
     const items = groupDuplicateHadiths(parseDorarRelatedHadithsHtml(html)).map(
       (g) => g.primary,
     );
@@ -687,12 +739,14 @@ export class DorarProvider implements HadithProvider {
 
   async fetchSimilar(dorarId: string, signal?: AbortSignal): Promise<HadithResult[]> {
     if (!isValidDorarId(dorarId)) return [];
+    throwIfAborted(signal);
     const cacheKey = `sim:${dorarId}`;
     const cached = readLru(this.relatedCache, cacheKey);
     if (cached) return cached;
 
     const url = `${this.webBase}/h/${encodeURIComponent(dorarId)}?sims=1`;
     const html = await this.fetcher(url, signal);
+    throwIfAborted(signal);
     const grouped = groupDuplicateHadiths(parseDorarRelatedHadithsHtml(html))
       .map((g) => g.primary)
       .sort((a, b) => RELATED_ORDER[b.gradeBucket] - RELATED_ORDER[a.gradeBucket]);

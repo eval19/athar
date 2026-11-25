@@ -575,4 +575,168 @@ describe('DorarProvider smart typo recovery', () => {
     expect(recovered.correctedFrom).toBe('الناور');
     expect(recovered.items).toHaveLength(1);
   });
+
+  describe('AbortSignal short-circuiting', () => {
+    it('rejects immediately with AbortError and makes 0 HTTP calls when signal is pre-aborted', async () => {
+      const requestedUrls: string[] = [];
+      const fakeFetch: HttpFetchFn = async (url) => {
+        requestedUrls.push(url);
+        return VALID_NAR_BODY;
+      };
+      const provider = new DorarProvider({
+        webBase: 'https://dorar.net',
+        fetcher: fakeFetch,
+      });
+
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        provider.search({ query: 'النار', filter: 'all', page: 1, signal: controller.signal }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+      await expect(provider.fetchOsoul('abc123', controller.signal)).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+      await expect(provider.fetchAltSahih('abc123', controller.signal)).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+      await expect(provider.fetchSimilar('abc123', controller.signal)).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+
+      expect(requestedUrls).toHaveLength(0);
+    });
+
+    it('stops multi-page backfill after abort even when the fetcher ignores AbortSignal', async () => {
+      const requestedUrls: string[] = [];
+      const controller = new AbortController();
+
+      // Simulate CapacitorHttp.get on Android: resolves normally without checking signal
+      const nativeStyleFetch: HttpFetchFn = async (url) => {
+        requestedUrls.push(url);
+        controller.abort();
+        return VALID_NAR_BODY;
+      };
+
+      const provider = new DorarProvider({
+        endpoint: 'https://dorar.net/dorar_api.json',
+        fetcher: nativeStyleFetch,
+      });
+
+      // filter='sahih' with only 1 result + hasMore=true would otherwise backfill pages 2 and 3
+      await expect(
+        provider.search({
+          query: 'النار',
+          filter: 'sahih',
+          page: 1,
+          forceExact: true,
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+
+      expect(requestedUrls).toHaveLength(1);
+    });
+
+    it('stops cascading fallback stages after abort and does not cache the abandoned search', async () => {
+      const requestedUrls: string[] = [];
+      const controller = new AbortController();
+      let shouldAbort = true;
+
+      const nativeStyleFetch: HttpFetchFn = async (url) => {
+        requestedUrls.push(url);
+        if (shouldAbort) {
+          controller.abort();
+          return EMPTY_BODY;
+        }
+        if (new URL(url).searchParams.get('skey') === 'النار') {
+          return VALID_NAR_BODY;
+        }
+        return EMPTY_BODY;
+      };
+
+      const provider = new DorarProvider({
+        endpoint: 'https://dorar.net/dorar_api.json',
+        fetcher: nativeStyleFetch,
+      });
+
+      // Stage 0 returns empty and aborts — Stage 1 spell-correction ('النار') must not run
+      await expect(
+        provider.search({
+          query: 'الناور',
+          filter: 'all',
+          page: 1,
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+      expect(requestedUrls).toHaveLength(1);
+
+      // A subsequent non-aborted search for the same query must run fresh (not served from cache)
+      shouldAbort = false;
+      const recovered = await provider.search({
+        query: 'الناور',
+        filter: 'all',
+        page: 1,
+      });
+      expect(recovered.effectiveQuery).toBe('النار');
+      expect(recovered.items).toHaveLength(1);
+    });
+
+    it('does not fall back from HTML web search to dorar_api.json when aborted mid-request', async () => {
+      const requestedUrls: string[] = [];
+      const controller = new AbortController();
+
+      const nativeStyleFetch: HttpFetchFn = async (url) => {
+        requestedUrls.push(url);
+        controller.abort();
+        // Unrecognized HTML would normally trigger fallback to dorar_api.json
+        return '<html><body>unrecognized</body></html>';
+      };
+
+      const provider = new DorarProvider({
+        webBase: 'https://dorar.net',
+        fetcher: nativeStyleFetch,
+      });
+
+      await expect(
+        provider.search({
+          query: 'النار',
+          filter: 'all',
+          page: 1,
+          forceExact: true,
+          signal: controller.signal,
+        }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+
+      expect(requestedUrls).toHaveLength(1);
+      expect(requestedUrls[0]).toContain('/hadith/search?');
+    });
+
+    it('does not cache fetchOsoul when signal aborts before response completes', async () => {
+      let calls = 0;
+      const controller = new AbortController();
+
+      const nativeStyleFetch: HttpFetchFn = async () => {
+        calls++;
+        if (calls === 1) {
+          controller.abort();
+        }
+        return '<div>أصول الحديث: <h5 class="h5-responsive"><span style="color:maroon">صحيح البخاري</span> متن</h5></div>';
+      };
+
+      const provider = new DorarProvider({
+        webBase: 'https://dorar.net',
+        fetcher: nativeStyleFetch,
+      });
+
+      await expect(provider.fetchOsoul('h123', controller.signal)).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+      expect(calls).toBe(1);
+
+      // Subsequent non-aborted fetch should actually execute and return entries
+      const entries = await provider.fetchOsoul('h123');
+      expect(calls).toBe(2);
+      expect(entries).toHaveLength(1);
+    });
+  });
 });
