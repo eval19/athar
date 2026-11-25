@@ -9,8 +9,10 @@
   --canvas-light: #f6f3ec;
   --canvas-dark: #121312;
 
-  --dock-light: rgba(246, 243, 236, 0.96);
-  --dock-dark: rgba(18, 19, 18, 0.97);
+  --dock-light: rgba(246, 243, 236, 0.80);
+  --dock-dark: rgba(18, 19, 18, 0.78);
+  --dock-fade-light: rgba(246, 243, 236, 0.72);
+  --dock-fade-dark: rgba(18, 19, 18, 0.62);
 
   --surface-light: #fffdf9;
   --surface-dark: #1a1b1a;
@@ -63,8 +65,6 @@
 
   --sheet-shadow-light: 0 1px 2px rgba(27, 24, 18, 0.045), 0 0 0 1px rgba(27, 24, 18, 0.06);
   --sheet-shadow-dark: 0 1px 2px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(241, 238, 231, 0.07);
-  --dock-shadow-light: 0 8px 20px rgba(27, 24, 18, 0.065);
-  --dock-shadow-dark: 0 10px 24px rgba(0, 0, 0, 0.36);
 
   /* Grade badge tokens (severity ladder: Sahih -> Hasan -> Daif -> Very Weak/Munkar -> Mawdu/Batil -> Detailed) */
   --sahih-bg-light: #e5f3ec;
@@ -100,6 +100,7 @@
   /* Default (light) semantic tokens — fallback for older WebViews */
   --bg-canvas: var(--canvas-light);
   --bg-dock: var(--dock-light);
+  --dock-fade: var(--dock-fade-light);
   --bg-surface: var(--surface-light);
   --bg-elevated: var(--elevated-light);
   --bg-subtle: var(--subtle-light);
@@ -118,7 +119,6 @@
   --mark-ink: var(--mark-ink-light);
   --selection-bg: var(--selection-bg-light);
   --sheet-shadow: var(--sheet-shadow-light);
-  --dock-shadow: var(--dock-shadow-light);
 
   --sahih-bg: var(--sahih-bg-light);
   --sahih-ink: var(--sahih-ink-light);
@@ -151,6 +151,7 @@
   :root:not([data-theme="light"]) {
     --bg-canvas: var(--canvas-dark);
     --bg-dock: var(--dock-dark);
+    --dock-fade: var(--dock-fade-dark);
     --bg-surface: var(--surface-dark);
     --bg-elevated: var(--elevated-dark);
     --bg-subtle: var(--subtle-dark);
@@ -169,7 +170,6 @@
     --mark-ink: var(--mark-ink-dark);
     --selection-bg: var(--selection-bg-dark);
     --sheet-shadow: var(--sheet-shadow-dark);
-    --dock-shadow: var(--dock-shadow-dark);
 
     --sahih-bg: var(--sahih-bg-dark);
     --sahih-ink: var(--sahih-ink-dark);
@@ -189,6 +189,7 @@
 :root[data-theme="dark"] {
   --bg-canvas: var(--canvas-dark);
   --bg-dock: var(--dock-dark);
+  --dock-fade: var(--dock-fade-dark);
   --bg-surface: var(--surface-dark);
   --bg-elevated: var(--elevated-dark);
   --bg-subtle: var(--subtle-dark);
@@ -207,7 +208,6 @@
   --mark-ink: var(--mark-ink-dark);
   --selection-bg: var(--selection-bg-dark);
   --sheet-shadow: var(--sheet-shadow-dark);
-  --dock-shadow: var(--dock-shadow-dark);
 
   --sahih-bg: var(--sahih-bg-dark);
   --sahih-ink: var(--sahih-ink-dark);
@@ -228,6 +228,7 @@
   :root {
     --bg-canvas: light-dark(var(--canvas-light), var(--canvas-dark));
     --bg-dock: light-dark(var(--dock-light), var(--dock-dark));
+    --dock-fade: light-dark(var(--dock-fade-light), var(--dock-fade-dark));
     --bg-surface: light-dark(var(--surface-light), var(--surface-dark));
     --bg-elevated: light-dark(var(--elevated-light), var(--elevated-dark));
     --bg-subtle: light-dark(var(--subtle-light), var(--subtle-dark));
@@ -262,7 +263,13 @@
 }
 
 html {
-  scroll-padding-top: 11rem;
+  scroll-padding-top: calc(10.5rem + env(safe-area-inset-top, 0px));
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 html,
@@ -288,6 +295,40 @@ body {
 button,
 summary {
   touch-action: manipulation;
+}
+
+/* Consistent accessible focus outline across every interactive control, including Forced Colors Mode */
+:where(a:any-link, button, summary):focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  :where(a:any-link, button, summary, input):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+}
+
+/* Expand hit areas on coarse touch pointers without visually bloating compact pills or close icons */
+@media (pointer: coarse) {
+  .touch-target,
+  .touch-target-y {
+    position: relative;
+  }
+
+  .touch-target::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+
+  .touch-target-y::before {
+    content: '';
+    position: absolute;
+    inset-block: -5px;
+    inset-inline: 0;
+  }
 }
 
 /* Native search clear button hidden because we render an accessible custom button */
@@ -334,32 +375,68 @@ input[type='search']::-webkit-search-results-decoration {
   mask-image: linear-gradient(to top, transparent 0%, transparent 0.15lh, black 2.2lh);
 }
 
-/* Frosted glass backdrop for sticky search/filter dock (no dividing border line) */
-.sticky-dock-blur {
-  background-color: var(--bg-dock);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+/* Unified sticky top chrome: seamless canvas at rest, real frosted glass + feathered bottom fade on scroll */
+.top-chrome-shell {
+  background-color: var(--bg-canvas);
+  transform: translate3d(0, 0, 0);
 }
 
-/* Unified sticky top chrome: glides header row away on scroll-down, reveals on small scroll-up */
-.top-chrome-shell {
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
+.top-chrome-shell::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 16px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(to bottom, var(--dock-fade) 0%, transparent 100%);
 }
 
 .top-chrome-scrolled {
-  box-shadow: var(--dock-shadow);
+  background-color: var(--bg-dock);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+}
+
+.top-chrome-scrolled::after {
+  opacity: 1;
+}
+
+/* Opaque ceiling behind header and narrow top edge above SearchBar so scrolled text never slices near the status bar */
+.top-header-cap {
+  background: linear-gradient(
+    to bottom,
+    var(--bg-canvas) 0%,
+    var(--bg-canvas) 68%,
+    transparent 100%
+  );
+}
+
+.top-chrome-scrolled .top-dock-cap {
+  background: linear-gradient(to bottom, var(--bg-canvas) 0%, transparent 18px);
 }
 
 .top-chrome-collapsed {
   transform: translate3d(0, calc(-1 * var(--header-collapse-y, 64px)), 0);
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  .top-chrome-scrolled {
+    background-color: var(--bg-canvas);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .top-chrome-shell {
     transition:
       transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 180ms ease-out;
+      background-color 180ms ease-out;
+  }
+
+  .top-chrome-shell::after {
+    transition: opacity 180ms ease-out;
   }
 }
 

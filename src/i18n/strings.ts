@@ -90,7 +90,7 @@ export interface AppStrings {
 const AR_STRINGS: AppStrings = {
   appName: 'أَثَر',
   appSubtitle: 'بحث سريع وواضح في الأحاديث النبوية',
-  searchPlaceholder: 'اكتب أي كلمة من الحديث… مثل: النيات، النار، الرحمة',
+  searchPlaceholder: 'ابحث بكلمة من الحديث… مثل: النيات',
   searchButton: 'بحث',
   clearSearch: 'مسح البحث',
   filtersLabel: 'تصفية حسب درجة الحديث',
@@ -291,7 +291,7 @@ const AR_STRINGS: AppStrings = {
 const EN_STRINGS: AppStrings = {
   appName: 'Athar',
   appSubtitle: 'Clear, fast Arabic Hadith search',
-  searchPlaceholder: 'Type any Arabic word… e.g. النيات، النار، الرحمة',
+  searchPlaceholder: 'Search any Arabic word… e.g. النيات',
   searchButton: 'Search',
   clearSearch: 'Clear search',
   filtersLabel: 'Filter by hadith authenticity',

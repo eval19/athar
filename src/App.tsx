@@ -296,12 +296,12 @@ export default function App() {
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <div
-        className={`top-chrome-shell sticky top-0 z-20 sticky-dock-blur${
+        className={`top-chrome-shell sticky top-0 z-20${
           pageScrolled ? ' top-chrome-scrolled' : ''
         }${headerHidden ? ' top-chrome-collapsed' : ''}`}
         style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
       >
-        <div ref={headerWrapRef} onFocusCapture={revealHeader}>
+        <div ref={headerWrapRef} className="top-header-cap" onFocusCapture={revealHeader}>
           <Header
             locale={locale}
             strings={strings}
@@ -314,16 +314,18 @@ export default function App() {
           />
         </div>
 
-        <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2 pt-1.5">
-          <SearchBar
-            value={search.inputValue}
-            onChange={search.setInputValue}
-            onSubmit={search.submitSearch}
-            onClear={() => search.setInputValue('')}
-            isLoading={search.isLoading}
-            strings={strings}
-          />
-          <FilterPills value={search.filter} onChange={search.setFilter} strings={strings} />
+        <div className="top-dock-cap">
+          <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2 pt-1.5">
+            <SearchBar
+              value={search.inputValue}
+              onChange={search.setInputValue}
+              onSubmit={search.submitSearch}
+              onClear={() => search.setInputValue('')}
+              isLoading={search.isLoading}
+              strings={strings}
+            />
+            <FilterPills value={search.filter} onChange={search.setFilter} strings={strings} />
+          </div>
         </div>
       </div>
 
@@ -434,7 +436,7 @@ export default function App() {
                   type="button"
                   onClick={search.loadMore}
                   disabled={search.isLoadingMore}
-                  className="hadith-sheet inline-flex h-11 items-center justify-center gap-2 rounded-full bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60"
+                  className="hadith-sheet inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-surface px-6 text-sm font-semibold text-ink transition-colors hover:bg-elevated active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {search.isLoadingMore && (
                     <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />

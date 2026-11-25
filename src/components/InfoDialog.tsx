@@ -204,8 +204,8 @@ export function InfoDialog({
                     onClick={() => onLocaleChange(lang)}
                     className={
                       active
-                        ? 'rounded-xl border border-brand bg-brand-soft px-3 py-2 text-sm font-semibold text-brand transition-colors'
-                        : 'rounded-xl border border-transparent bg-elevated px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
+                        ? 'min-h-10 rounded-xl border border-brand bg-brand-soft px-3 py-2 text-sm font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                        : 'min-h-10 rounded-xl border border-transparent bg-elevated px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
                     }
                   >
                     {lang === 'ar' ? 'العربية' : 'English'}
@@ -231,8 +231,8 @@ export function InfoDialog({
                     onClick={() => onThemeChange(value)}
                     className={
                       active
-                        ? 'flex items-center gap-2.5 rounded-xl border border-brand bg-brand-soft px-3.5 py-2.5 text-start text-sm font-semibold text-brand transition-colors'
-                        : 'flex items-center gap-2.5 rounded-xl border border-transparent bg-elevated px-3.5 py-2.5 text-start text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
+                        ? 'flex min-h-11 items-center gap-2.5 rounded-xl border border-brand bg-brand-soft px-3.5 py-2.5 text-start text-sm font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                        : 'flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent bg-elevated px-3.5 py-2.5 text-start text-sm font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
                     }
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -259,8 +259,8 @@ export function InfoDialog({
                     onClick={() => onReadingScaleChange(scale)}
                     className={
                       active
-                        ? 'rounded-xl border border-brand bg-brand-soft px-3 py-2 text-xs font-semibold text-brand transition-colors'
-                        : 'rounded-xl border border-transparent bg-elevated px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink'
+                        ? 'min-h-10 rounded-xl border border-brand bg-brand-soft px-3 py-2 text-xs font-semibold text-brand transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                        : 'min-h-10 rounded-xl border border-transparent bg-elevated px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
                     }
                   >
                     {strings.readingSizes[scale]}

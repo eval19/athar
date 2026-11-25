@@ -71,7 +71,7 @@ export function SearchBar({
             type="button"
             onClick={handleClear}
             aria-label={strings.clearSearch}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

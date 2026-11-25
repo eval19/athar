@@ -50,7 +50,9 @@ export function GradeBadge({
   const sizeClass =
     size === 'sm'
       ? 'px-2 py-0.5 text-[0.7rem] gap-1'
-      : 'px-2.5 py-1 text-xs gap-1.5';
+      : onToggleInfo
+        ? 'min-h-8 px-3 py-1.5 text-xs gap-1.5'
+        : 'px-2.5 py-1 text-xs gap-1.5';
 
   const content = (
     <>
@@ -82,7 +84,7 @@ export function GradeBadge({
         aria-expanded={Boolean(expanded)}
         aria-label={strings.gradeHelpAria(label)}
         style={{ backgroundColor: style.bg, color: style.color }}
-        className={`inline-flex items-center rounded-full font-semibold leading-none transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${sizeClass}${
+        className={`touch-target-y inline-flex items-center rounded-full font-semibold leading-none transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${sizeClass}${
           hintPulse && !expanded ? ' grade-badge-hint' : ''
         }`}
       >

@@ -107,7 +107,7 @@ export function InitialWelcome({
                 dir="rtl"
                 lang="ar"
                 onClick={() => onSelectQuery(example)}
-                className="hadith-sheet rounded-full bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:text-brand active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="hadith-sheet inline-flex min-h-10 items-center rounded-full bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:text-brand active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {example}
               </button>
@@ -126,7 +126,7 @@ export function InitialWelcome({
             <button
               type="button"
               onClick={onClearRecent}
-              className="text-xs font-medium text-faint transition-colors hover:text-ink"
+              className="touch-target-y -me-2 inline-flex min-h-9 items-center rounded-full px-2.5 text-xs font-medium text-faint transition-colors hover:bg-elevated hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {strings.clearRecent}
             </button>
@@ -142,7 +142,7 @@ export function InitialWelcome({
                   onClick={() => onSelectQuery(term)}
                   dir="rtl"
                   lang="ar"
-                  className="py-1.5 pe-1.5 ps-3 font-medium transition-colors hover:text-brand"
+                  className="inline-flex min-h-10 items-center rounded-s-full py-1.5 pe-2.5 ps-3.5 font-medium transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {term}
                 </button>
@@ -150,9 +150,9 @@ export function InitialWelcome({
                   type="button"
                   onClick={() => onRemoveRecent(term)}
                   aria-label={`${strings.clearSearch} ${term}`}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-faint transition-colors hover:text-ink"
+                  className="inline-flex h-10 w-9 items-center justify-center rounded-e-full border-s border-line text-faint transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  <X className="h-3 w-3" aria-hidden="true" />
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -192,7 +192,7 @@ export function EmptyResults({
               dir="rtl"
               lang="ar"
               onClick={() => onSelectQuery(alt)}
-              className="rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand transition-opacity active:opacity-80"
+              className="inline-flex min-h-10 items-center rounded-full bg-brand-soft px-4 py-2 text-sm font-semibold text-brand transition-opacity active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {alt}
             </button>
@@ -219,7 +219,7 @@ export function ErrorState({ onRetry, strings }: ErrorStateProps) {
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-brand-ink transition-opacity hover:opacity-95 active:scale-95"
+        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-brand-ink transition-opacity hover:opacity-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
       >
         <RefreshCw className="h-4 w-4" aria-hidden="true" />
         <span>{strings.retry}</span>

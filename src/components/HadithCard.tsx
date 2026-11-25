@@ -294,7 +294,7 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={onDismissGradeHint}
               aria-label={strings.dismissHint}
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="touch-target -me-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -316,7 +316,7 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={() => setShowGradeHelp(false)}
               aria-label={strings.close}
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-subtle hover:text-ink"
+              className="touch-target -me-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -453,7 +453,7 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={handleCopy}
               aria-label={justCopied ? strings.copied : strings.copy}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="touch-target-y inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {justCopied ? (
                 <Check className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
@@ -467,7 +467,7 @@ export const HadithCard = memo(function HadithCard({
               type="button"
               onClick={() => void onShare(hadith)}
               aria-label={strings.share}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="touch-target-y inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
               <span>{strings.share}</span>
@@ -487,7 +487,7 @@ export const HadithCard = memo(function HadithCard({
 
         {/* Compact on-demand scholarly pills (at most 2 pills, single switchable panel) */}
         {hasActionPills && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             {canShowAlt && (
               <button
                 type="button"
@@ -498,7 +498,7 @@ export const HadithCard = memo(function HadithCard({
                     ? undefined
                     : { backgroundColor: 'var(--sahih-bg)', color: 'var(--sahih-ink)' }
                 }
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`touch-target-y inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   activePanel === 'alt' ? 'bg-brand text-brand-ink' : ''
                 }`}
               >
@@ -515,7 +515,7 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 aria-expanded={activePanel === 'osoul'}
                 onClick={() => togglePanel('osoul')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`touch-target-y inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   activePanel === 'osoul'
                     ? 'bg-ink text-canvas'
                     : 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
@@ -534,7 +534,7 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 aria-expanded={activePanel === 'similar'}
                 onClick={() => togglePanel('similar')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.72rem] font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`touch-target-y inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                   activePanel === 'similar'
                     ? 'bg-ink text-canvas'
                     : 'bg-elevated text-muted hover:bg-subtle hover:text-ink'
@@ -569,7 +569,7 @@ export const HadithCard = memo(function HadithCard({
                 type="button"
                 onClick={() => setActivePanel(null)}
                 aria-label={strings.close}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint hover:bg-subtle hover:text-ink"
+                className="touch-target -me-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -588,7 +588,7 @@ export const HadithCard = memo(function HadithCard({
                 <button
                   type="button"
                   onClick={() => void loadPanel(activePanel)}
-                  className="hadith-sheet rounded-full bg-surface px-3 py-1 font-semibold text-brand"
+                  className="hadith-sheet touch-target-y inline-flex min-h-9 items-center rounded-full bg-surface px-3.5 py-1.5 font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {strings.retry}
                 </button>
@@ -707,8 +707,8 @@ export const HadithCard = memo(function HadithCard({
 
         {/* Native <details> disclosure for grouped duplicate scholars/sources */}
         {others.length > 0 && (
-          <details className="other-rulings mt-3 border-t border-line pt-2.5">
-            <summary className="other-rulings-summary text-xs font-semibold text-brand">
+          <details className="other-rulings mt-3 border-t border-line pt-2">
+            <summary className="other-rulings-summary min-h-10 rounded-lg py-1 text-xs font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
               <span className="tabular-nums">{strings.otherRulingsLabel(others.length)}</span>
               {otherBucketCounts.length > 0 && (
                 <span className="ms-auto flex flex-wrap items-center gap-1">
