@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { formatHadithForShare } from '../src/services/shareCopy';
 import type { HadithResult } from '../src/domain/hadith';
 
-const SAMPLE_HADITH: HadithResult = {
+const BUKHARI_HADITH: HadithResult = {
   id: 'h-1',
-  text: 'إنَّما الأعْمالُ بالنِّيّاتِ، وإنَّما لِكُلِّ امْرِئٍ ما نَوى.',
+  text: 'إنَّما الأعْمالُ بالنِّيّاتِ، وإنَّما لِكُلِّ امْرِئٍ ما نَوى.',
   narrator: 'عمر بن الخطاب',
   muhaddith: 'البخاري',
   source: 'صحيح البخاري',
@@ -13,37 +13,115 @@ const SAMPLE_HADITH: HadithResult = {
   gradeBucket: 'sahih',
 };
 
-describe('formatHadithForShare', () => {
-  it('formats complete Arabic hadith citation cleanly for copy/share', () => {
-    const formatted = formatHadithForShare(SAMPLE_HADITH, 'ar');
+const GRADED_HADITH: HadithResult = {
+  id: 'h-2',
+  text: 'تبسُّمُكَ في وجهِ أخيكَ لكَ صدقةٌ.',
+  narrator: 'أبو ذر الغفاري',
+  muhaddith: 'الألباني',
+  source: 'سنن الترمذي',
+  pageOrNumber: '1956',
+  rawGrade: 'صحيح',
+  gradeBucket: 'sahih',
+};
 
-    expect(formatted).toContain(SAMPLE_HADITH.text);
-    expect(formatted).toContain('الراوي: عمر بن الخطاب');
-    expect(formatted).toContain('المحدث: البخاري');
-    expect(formatted).toContain('المصدر: صحيح البخاري (1)');
-    expect(formatted).toContain('الحكم: [صحيح]');
-    expect(formatted).toContain('الدرر السنية');
+const WEAK_HADITH: HadithResult = {
+  id: 'h-3',
+  text: 'اطلبوا العلم ولو بالصين.',
+  narrator: 'أنس بن مالك',
+  muhaddith: 'الألباني',
+  source: 'السلسلة الضعيفة',
+  pageOrNumber: '416',
+  rawGrade: 'باطل',
+  gradeBucket: 'batil',
+};
+
+describe('formatHadithForShare (clean Option 2 style)', () => {
+  it('formats Bukhari/Muslim sahih hadith cleanly without redundant verdict or app watermark', () => {
+    const formatted = formatHadithForShare(BUKHARI_HADITH, 'ar');
+
+    expect(formatted).toBe(
+      [
+        'عن عمر بن الخطاب:',
+        '«إنَّما الأعْمالُ بالنِّيّاتِ، وإنَّما لِكُلِّ امْرِئٍ ما نَوى.»',
+        '— صحيح البخاري (1)',
+      ].join('\n'),
+    );
   });
 
-  it('formats English metadata labels cleanly when UI locale is English', () => {
-    const formatted = formatHadithForShare(SAMPLE_HADITH, 'en');
+  it('includes scholar verdict concisely on non-Bukhari/Muslim collections', () => {
+    const formatted = formatHadithForShare(GRADED_HADITH, 'ar');
 
-    expect(formatted).toContain(SAMPLE_HADITH.text);
-    expect(formatted).toContain('Narrator: عمر بن الخطاب');
-    expect(formatted).toContain('Source: صحيح البخاري (1)');
-    expect(formatted).toContain('Grade: [صحيح]');
-    expect(formatted).toContain('Athar');
+    expect(formatted).toBe(
+      [
+        'عن أبو ذر الغفاري:',
+        '«تبسُّمُكَ في وجهِ أخيكَ لكَ صدقةٌ.»',
+        '— سنن الترمذي (1956) • صحيح (الألباني)',
+      ].join('\n'),
+    );
   });
 
-  it('omits empty optional metadata fields gracefully', () => {
+  it('places a clear top caution line on weak/fabricated narrations without repeating the grade label', () => {
+    const formatted = formatHadithForShare(WEAK_HADITH, 'ar');
+
+    expect(formatted).toBe(
+      [
+        '⚠️ لا يصح — باطل / لا أصل له',
+        'عن أنس بن مالك:',
+        '«اطلبوا العلم ولو بالصين.»',
+        '— السلسلة الضعيفة (416) • الألباني',
+      ].join('\n'),
+    );
+  });
+
+  it('preserves nuanced scholar verdicts on weak hadiths when they add detail', () => {
+    const nuancedWeak: HadithResult = {
+      ...WEAK_HADITH,
+      rawGrade: 'إسناده ضعيف لانقطاعه',
+      gradeBucket: 'daif_isnad',
+    };
+    const formatted = formatHadithForShare(nuancedWeak, 'ar');
+
+    expect(formatted).toBe(
+      [
+        '⚠️ لا يصح — إسناده ضعيف',
+        'عن أنس بن مالك:',
+        '«اطلبوا العلم ولو بالصين.»',
+        '— السلسلة الضعيفة (416) • إسناده ضعيف لانقطاعه (الألباني)',
+      ].join('\n'),
+    );
+  });
+
+  it('formats English locale cleanly for both authentic and unauthentic hadiths', () => {
+    expect(formatHadithForShare(BUKHARI_HADITH, 'en')).toBe(
+      [
+        'Narrated by عمر بن الخطاب:',
+        '«إنَّما الأعْمالُ بالنِّيّاتِ، وإنَّما لِكُلِّ امْرِئٍ ما نَوى.»',
+        '— صحيح البخاري (1)',
+      ].join('\n'),
+    );
+
+    expect(formatHadithForShare(WEAK_HADITH, 'en')).toBe(
+      [
+        '⚠️ Caution — Baseless',
+        'Narrated by أنس بن مالك:',
+        '«اطلبوا العلم ولو بالصين.»',
+        '— السلسلة الضعيفة (416) • الألباني',
+      ].join('\n'),
+    );
+  });
+
+  it('omits empty optional metadata fields and avoids double-wrapping guillemets', () => {
     const partial: HadithResult = {
-      ...SAMPLE_HADITH,
+      ...BUKHARI_HADITH,
+      text: '«نص حديث محاط بأقواس.»',
+      narrator: '',
       pageOrNumber: '',
       muhaddith: '',
     };
     const formatted = formatHadithForShare(partial, 'ar');
-    expect(formatted).not.toContain('المحدث:');
-    expect(formatted).toContain('المصدر: صحيح البخاري');
+
+    expect(formatted).toBe(['«نص حديث محاط بأقواس.»', '— صحيح البخاري'].join('\n'));
     expect(formatted).not.toContain('()');
+    expect(formatted).not.toContain('««');
   });
 });
