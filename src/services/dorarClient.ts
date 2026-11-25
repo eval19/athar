@@ -159,11 +159,13 @@ export function buildDorarWebSearchUrl(
   if (params.searchType === 'a') {
     searchParams.set('st', 'a');
   }
-  if (params.page > 1) {
-    searchParams.set('page', String(params.page));
-  }
   for (const degree of degreeParamsForFilter(params.filter)) {
     searchParams.append('d[]', degree);
+  }
+  if (params.page > 1) {
+    // Al-Dorar only paginates the #specialist tab when `all` is present alongside `page`
+    searchParams.set('all', '');
+    searchParams.set('page', String(params.page));
   }
   return `${webBase}/hadith/search?${searchParams.toString()}`;
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildDorarSearchUrl, DorarProvider } from '../src/services/dorarClient';
+import {
+  buildDorarSearchUrl,
+  buildDorarWebSearchUrl,
+  DorarProvider,
+} from '../src/services/dorarClient';
 import type { HttpFetchFn } from '../src/services/dorarClient';
 
 const VALID_NAR_BODY = JSON.stringify({
@@ -53,6 +57,31 @@ describe('buildDorarSearchUrl', () => {
     });
     expect(url).toContain('d%5B%5D=3');
     expect(url).toContain('d%5B%5D=4');
+  });
+});
+
+describe('buildDorarWebSearchUrl', () => {
+  it('omits all and page on page 1', () => {
+    const url = buildDorarWebSearchUrl('https://dorar.net', {
+      query: 'الرحمة',
+      filter: 'all',
+      page: 1,
+    });
+    expect(url).toContain('q=%D8%A7%D9%84%D8%B1%D8%AD%D9%85%D8%A9');
+    expect(url).not.toContain('page=');
+    expect(url).not.toContain('all=');
+  });
+
+  it('includes all= alongside page= on page > 1 so Dorar paginates the #specialist tab', () => {
+    const url = buildDorarWebSearchUrl('https://dorar.net', {
+      query: 'الرحمة',
+      filter: 'sahih',
+      page: 2,
+    });
+    expect(url).toContain('d%5B%5D=1');
+    expect(url).toContain('d%5B%5D=2');
+    expect(url).toContain('all=');
+    expect(url).toContain('page=2');
   });
 });
 

@@ -150,8 +150,8 @@ export function useHadithSearch() {
         if (!options.append) {
           setItems([]);
           setHasMore(false);
+          setHasError(true);
         }
-        setHasError(true);
       } finally {
         if (seq === requestSeqRef.current) {
           if (!deferLoadingClear) {
