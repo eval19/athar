@@ -135,14 +135,14 @@ export function InitialWelcome({
             {recentSearches.map((term) => (
               <div
                 key={term}
-                className="inline-flex items-center rounded-full bg-elevated text-xs text-ink"
+                className="inline-flex items-center rounded-full border border-line bg-canvas text-[0.8125rem] text-ink transition-colors hover:border-line-strong"
               >
                 <button
                   type="button"
                   onClick={() => onSelectQuery(term)}
                   dir="rtl"
                   lang="ar"
-                  className="inline-flex min-h-10 items-center rounded-s-full py-1.5 pe-2.5 ps-3.5 font-medium transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="touch-target-y inline-flex min-h-9 items-center rounded-full py-1 pe-1.5 ps-3.5 font-medium text-ink transition-colors hover:text-brand active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {term}
                 </button>
@@ -150,7 +150,7 @@ export function InitialWelcome({
                   type="button"
                   onClick={() => onRemoveRecent(term)}
                   aria-label={`${strings.clearSearch} ${term}`}
-                  className="inline-flex h-10 w-9 items-center justify-center rounded-e-full border-s border-line text-faint transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="me-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-elevated hover:text-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
