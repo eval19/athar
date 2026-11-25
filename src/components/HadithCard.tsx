@@ -1,4 +1,4 @@
-import { memo, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
   Check,
@@ -78,6 +78,8 @@ export const HadithCard = memo(function HadithCard({
   const [altData, setAltData] = useState<HadithResult[] | null>(null);
   const [similarData, setSimilarData] = useState<HadithResult[] | null>(null);
   const panelSeqRef = useRef(0);
+  const mountedRef = useRef(true);
+  const copyTimerRef = useRef<number | null>(null);
   const articleRef = useRef<HTMLElement | null>(null);
   const matnRef = useRef<HTMLParagraphElement | null>(null);
   const matnId = useId();
@@ -188,37 +190,59 @@ export const HadithCard = memo(function HadithCard({
     try {
       if (panel === 'osoul' && onFetchOsoul) {
         const res = await onFetchOsoul(targetId);
-        if (seq === panelSeqRef.current) setOsoulData(res);
+        if (mountedRef.current && seq === panelSeqRef.current) setOsoulData(res);
       } else if (panel === 'alt' && onFetchAltSahih) {
         const res = await onFetchAltSahih(targetId);
-        if (seq === panelSeqRef.current) setAltData(res);
+        if (mountedRef.current && seq === panelSeqRef.current) setAltData(res);
       } else if (panel === 'similar' && onFetchSimilar) {
         const res = await onFetchSimilar(targetId);
-        if (seq === panelSeqRef.current) setSimilarData(res);
+        if (mountedRef.current && seq === panelSeqRef.current) setSimilarData(res);
       }
     } catch {
-      if (seq === panelSeqRef.current) setPanelError(true);
+      if (mountedRef.current && seq === panelSeqRef.current) setPanelError(true);
     } finally {
-      if (seq === panelSeqRef.current) setPanelLoading(false);
+      if (mountedRef.current && seq === panelSeqRef.current) setPanelLoading(false);
     }
+  };
+
+  const closePanel = () => {
+    panelSeqRef.current++;
+    setActivePanel(null);
+    setPanelLoading(false);
+    setPanelError(false);
   };
 
   const togglePanel = (panel: Exclude<ActivePanel, null>) => {
     if (activePanel === panel) {
-      panelSeqRef.current++;
-      setActivePanel(null);
-      setPanelLoading(false);
-      setPanelError(false);
+      closePanel();
       return;
     }
     setActivePanel(panel);
     void loadPanel(panel);
   };
 
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleCopy = async () => {
     await onCopy(hadith);
+    if (!mountedRef.current) return;
     setJustCopied(true);
-    window.setTimeout(() => setJustCopied(false), 1800);
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current);
+    }
+    copyTimerRef.current = window.setTimeout(() => {
+      copyTimerRef.current = null;
+      setJustCopied(false);
+    }, 1800);
   };
 
   const handleToggleGradeHelp = () => {
@@ -567,7 +591,7 @@ export const HadithCard = memo(function HadithCard({
               </span>
               <button
                 type="button"
-                onClick={() => setActivePanel(null)}
+                onClick={closePanel}
                 aria-label={strings.close}
                 className="touch-target -me-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
