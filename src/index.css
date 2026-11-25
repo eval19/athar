@@ -696,15 +696,44 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   }
 }
 
-/* Desktop Quick-Search Popup (Tauri Windows): compact PC typography & tear-free scrolling */
+/* Desktop Quick-Search Popup (Tauri Windows): compact PC typography, rounded shell & tear-free scrolling */
 html[data-platform='desktop'] {
   font-size: 13.5px;
   scroll-padding-top: 8.5rem;
 }
 
-html[data-platform='desktop'] body {
-  overflow-x: hidden;
-  min-height: 100dvh;
+html[data-platform='desktop'],
+html[data-platform='desktop'] body,
+html[data-platform='desktop'] #root {
+  background-color: transparent !important;
+  height: 100%;
+  overflow: hidden;
+}
+
+.desktop-window-frame {
+  height: 100dvh;
+  padding: 8px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.desktop-window-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.28),
+    0 3px 10px rgba(0, 0, 0, 0.16);
+}
+
+html[data-platform='desktop'] dialog::backdrop {
+  margin: 8px;
+  border-radius: 16px;
 }
 
 /* Keep sticky header crisp and stable on WebView2 (no translate3d/backdrop-filter banding or collapse slicing) */

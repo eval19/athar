@@ -99,6 +99,7 @@ export default function App() {
   const [updateState, setUpdateState] = useState<UpdateStorageState>(() => loadUpdateState());
   const [manualUpdateStatus, setManualUpdateStatus] = useState<ManualUpdateStatus>('idle');
   const isDesktop = isTauriDesktop();
+  const desktopScrollRef = useRef<HTMLDivElement | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState>(DEFAULT_DESKTOP_STATE);
   const [desktopShortcutError, setDesktopShortcutError] = useState(false);
   const [searchFocusSignal, setSearchFocusSignal] = useState(0);
@@ -146,13 +147,16 @@ export default function App() {
   }, []);
 
   const revealHeader = useCallback(() => {
-    scrollHeaderRef.current = createScrollHeaderState(
-      typeof window !== 'undefined' ? window.scrollY : 0,
-    );
+    const scrollY = isDesktop
+      ? (desktopScrollRef.current?.scrollTop ?? 0)
+      : typeof window !== 'undefined'
+        ? window.scrollY
+        : 0;
+    scrollHeaderRef.current = createScrollHeaderState(scrollY);
     setHeaderHidden(false);
-  }, []);
+  }, [isDesktop]);
 
-  const search = useHadithSearch();
+  const search = useHadithSearch(isDesktop ? desktopScrollRef : undefined);
   const strings = useMemo(() => getStrings(locale), [locale]);
   const groupedItems = useMemo(
     () => groupDuplicateHadiths(search.items),
@@ -364,6 +368,13 @@ export default function App() {
       return;
     }
 
+    const scrollTarget: HTMLElement | Window | null = isDesktop
+      ? desktopScrollRef.current
+      : typeof window !== 'undefined'
+        ? window
+        : null;
+    if (!scrollTarget) return;
+
     let rafId = 0;
 
     const handleScroll = () => {
@@ -371,8 +382,9 @@ export default function App() {
       rafId = window.requestAnimationFrame(() => {
         rafId = 0;
         if (isDesktop) {
+          const y = desktopScrollRef.current?.scrollTop ?? 0;
           setHeaderHidden(false);
-          setPageScrolled(window.scrollY > 4);
+          setPageScrolled(y > 4);
           return;
         }
         const next = stepScrollHeader(scrollHeaderRef.current, {
@@ -387,9 +399,9 @@ export default function App() {
       });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      scrollTarget.removeEventListener('scroll', handleScroll);
       if (rafId !== 0) window.cancelAnimationFrame(rafId);
     };
   }, [isDesktop, settingsOpen, revealHeader]);
@@ -403,20 +415,30 @@ export default function App() {
     const effectiveBehavior: ScrollBehavior =
       behavior === 'smooth' && !prefersReducedMotion ? 'smooth' : 'auto';
 
-    const syncChromeToScroll = () => {
-      const actualY = window.scrollY;
-      scrollHeaderRef.current = createScrollHeaderState(actualY);
-      setHeaderHidden(false);
-      setPageScrolled(actualY > 12);
+    const desktopEl = isDesktop ? desktopScrollRef.current : null;
+    const readScrollY = () => (desktopEl ? desktopEl.scrollTop : window.scrollY);
+    const applyScroll = (pos: number, scrollBehavior: ScrollBehavior) => {
+      if (desktopEl) {
+        desktopEl.scrollTo({ top: pos, behavior: scrollBehavior });
+      } else {
+        window.scrollTo({ top: pos, behavior: scrollBehavior });
+      }
     };
 
-    window.scrollTo({ top, behavior: effectiveBehavior });
+    const syncChromeToScroll = () => {
+      const actualY = readScrollY();
+      scrollHeaderRef.current = createScrollHeaderState(actualY);
+      setHeaderHidden(false);
+      setPageScrolled(actualY > (isDesktop ? 4 : 12));
+    };
+
+    applyScroll(top, effectiveBehavior);
 
     if (effectiveBehavior === 'auto') {
       syncChromeToScroll();
-      if (top > 0 && window.scrollY < top - 24) {
+      if (top > 0 && readScrollY() < top - 24) {
         const rafId = window.requestAnimationFrame(() => {
-          window.scrollTo({ top, behavior: 'auto' });
+          applyScroll(top, 'auto');
           syncChromeToScroll();
         });
         return () => window.cancelAnimationFrame(rafId);
@@ -424,56 +446,57 @@ export default function App() {
     } else if (top === 0) {
       revealHeader();
     }
-  }, [search.scrollCommand, revealHeader]);
+  }, [isDesktop, search.scrollCommand, revealHeader]);
 
-  return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <div
-        className={`top-chrome-shell sticky top-0 z-20${
-          pageScrolled ? ' top-chrome-scrolled' : ''
-        }${headerHidden ? ' top-chrome-collapsed' : ''}`}
-        style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
-      >
-        {isDesktop && (
-          <DesktopChromeBar
-            pinned={desktopState.pinned}
-            shortcut={desktopState.shortcut}
-            shortcutEnabled={desktopState.shortcutEnabled}
-            onTogglePin={handleToggleDesktopPin}
-            onHide={() => void hideDesktopWindow()}
-            strings={strings}
-          />
-        )}
-        <div ref={headerWrapRef} className="top-header-cap" onFocusCapture={revealHeader}>
-          <Header
-            locale={locale}
-            strings={strings}
-            onToggleLocale={() => setLocale((prev) => (prev === 'ar' ? 'en' : 'ar'))}
-            onOpenSettings={() => setSettingsOpen(true)}
-            onResetHome={() => {
-              revealHeader();
-              search.resetHome();
-            }}
-          />
-        </div>
-
-        <div className="top-dock-cap">
-          <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2 pt-1.5">
-            <SearchBar
-              value={search.inputValue}
-              onChange={search.setInputValue}
-              onSubmit={search.submitSearch}
-              onClear={() => search.setInputValue('')}
-              isLoading={search.isLoading}
-              focusSignal={searchFocusSignal}
-              strings={strings}
-            />
-            <FilterPills value={search.filter} onChange={search.setFilter} strings={strings} />
-          </div>
-        </div>
+  const topChrome = (
+    <div
+      className={`top-chrome-shell ${isDesktop ? 'shrink-0' : 'sticky top-0'} z-20${
+        pageScrolled ? ' top-chrome-scrolled' : ''
+      }${headerHidden ? ' top-chrome-collapsed' : ''}`}
+      style={{ '--header-collapse-y': `${headerHeight}px` } as CSSProperties}
+    >
+      {isDesktop && (
+        <DesktopChromeBar
+          pinned={desktopState.pinned}
+          shortcut={desktopState.shortcut}
+          shortcutEnabled={desktopState.shortcutEnabled}
+          onTogglePin={handleToggleDesktopPin}
+          onHide={() => void hideDesktopWindow()}
+          strings={strings}
+        />
+      )}
+      <div ref={headerWrapRef} className="top-header-cap" onFocusCapture={revealHeader}>
+        <Header
+          locale={locale}
+          strings={strings}
+          onToggleLocale={() => setLocale((prev) => (prev === 'ar' ? 'en' : 'ar'))}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onResetHome={() => {
+            revealHeader();
+            search.resetHome();
+          }}
+        />
       </div>
 
-      <main className="safe-px safe-pb mx-auto max-w-2xl pt-2">
+      <div className="top-dock-cap">
+        <div className="safe-px mx-auto max-w-2xl space-y-2 pb-2 pt-1.5">
+          <SearchBar
+            value={search.inputValue}
+            onChange={search.setInputValue}
+            onSubmit={search.submitSearch}
+            onClear={() => search.setInputValue('')}
+            isLoading={search.isLoading}
+            focusSignal={searchFocusSignal}
+            strings={strings}
+          />
+          <FilterPills value={search.filter} onChange={search.setFilter} strings={strings} />
+        </div>
+      </div>
+    </div>
+  );
+
+  const mainContent = (
+    <main className="safe-px safe-pb mx-auto w-full max-w-2xl pt-2">
         {search.correctedFrom && !search.isLoading && search.items.length > 0 && (
           <div
             role="status"
@@ -596,7 +619,10 @@ export default function App() {
           </section>
         )}
       </main>
+  );
 
+  const overlays = (
+    <>
       <InfoDialog
         open={settingsOpen}
         onClose={() => {
@@ -644,6 +670,28 @@ export default function App() {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <div className="desktop-window-frame">
+        <div className="desktop-window-shell text-ink">
+          {topChrome}
+          <div ref={desktopScrollRef} className="flex-1 overflow-y-auto">
+            {mainContent}
+          </div>
+          {overlays}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh bg-canvas text-ink">
+      {topChrome}
+      {mainContent}
+      {overlays}
     </div>
   );
 }

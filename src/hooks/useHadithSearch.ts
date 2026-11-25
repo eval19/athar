@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { FilterMode, HadithResult, RecoveryMode } from '../domain/hadith';
 import { clearLearnedWords } from '../domain/learnedVocab';
 import {
@@ -25,7 +25,13 @@ export interface ScrollCommand {
 
 const provider = new DorarProvider();
 
-export function useHadithSearch() {
+export function useHadithSearch(scrollContainerRef?: RefObject<HTMLElement | null>) {
+  const getScrollY = useCallback(() => {
+    if (scrollContainerRef?.current) {
+      return scrollContainerRef.current.scrollTop;
+    }
+    return typeof window !== 'undefined' ? window.scrollY : 0;
+  }, [scrollContainerRef]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches());
   const [inputValue, setInputValue] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
@@ -125,10 +131,10 @@ export function useHadithSearch() {
     setIsLoadingMore(false);
     if (resettingHomeRef.current) {
       resettingHomeRef.current = false;
-    } else if (typeof window !== 'undefined' && window.scrollY > 0) {
+    } else if (getScrollY() > 0) {
       requestScroll(0, 'auto');
     }
-  }, [clearPendingTimers, requestScroll]);
+  }, [clearPendingTimers, getScrollY, requestScroll]);
 
   const executeSearch = useCallback(
     async (
@@ -161,7 +167,7 @@ export function useHadithSearch() {
         }
         setIsLoading(true);
         setActiveQuery(trimmed);
-        if (typeof window !== 'undefined' && window.scrollY > 0) {
+        if (getScrollY() > 0) {
           requestScroll(0, 'auto');
         }
       }
@@ -227,7 +233,7 @@ export function useHadithSearch() {
         }
       }
     },
-    [clearPendingTimers, resetResults, requestScroll],
+    [clearPendingTimers, getScrollY, resetResults, requestScroll],
   );
 
   runSearchRef.current = executeSearch;
@@ -263,14 +269,14 @@ export function useHadithSearch() {
       // Tapping the already-active tab pill while scrolled down smoothly glides back to the top
       if (nextFilter === filterRef.current) {
         tabSessionRef.current = resetTabScroll(tabSessionRef.current, nextFilter);
-        if (typeof window !== 'undefined' && window.scrollY > 0) {
+        if (getScrollY() > 0) {
           requestScroll(0, 'smooth');
         }
         return;
       }
 
       const prevFilter = filterRef.current;
-      const currentScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+      const currentScrollY = getScrollY();
       const snap = snapshotStateRef.current;
       if (!snap.isLoading && !snap.hasError && snap.activeQuery.length >= 2) {
         tabSessionRef.current = saveTabSnapshot(
@@ -319,7 +325,7 @@ export function useHadithSearch() {
       requestScroll(0, 'auto');
       void executeSearch(trimmed, nextFilter, 1);
     },
-    [clearPendingTimers, executeSearch, requestScroll],
+    [clearPendingTimers, executeSearch, getScrollY, requestScroll],
   );
 
   const submitSearch = useCallback(
@@ -376,10 +382,10 @@ export function useHadithSearch() {
     tabSessionRef.current = createTabSession('');
     setInputValue('');
     setFilter('all');
-    if (typeof window !== 'undefined' && window.scrollY > 0) {
+    if (getScrollY() > 0) {
       requestScroll(0, 'smooth');
     }
-  }, [requestScroll]);
+  }, [getScrollY, requestScroll]);
 
   const fetchOsoul = useCallback(
     (dorarId: string) => provider.fetchOsoul(dorarId),

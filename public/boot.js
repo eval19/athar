@@ -13,6 +13,9 @@ try {
     document.documentElement.lang = savedLang;
     document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
   }
+  if ('__TAURI_INTERNALS__' in window) {
+    document.documentElement.setAttribute('data-platform', 'desktop');
+  }
 } catch (_) {
   // Ignore storage restrictions during boot
 }

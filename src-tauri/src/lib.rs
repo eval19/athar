@@ -15,12 +15,12 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use url::Url;
 
 const DEFAULT_SHORTCUT: &str = "End";
-const POPUP_LOGICAL_WIDTH: f64 = 504.0;
-const POPUP_LOGICAL_HEIGHT: f64 = 806.0;
-const POPUP_MARGIN_LOGICAL: f64 = 14.0;
+const POPUP_LOGICAL_WIDTH: f64 = 520.0;
+const POPUP_LOGICAL_HEIGHT: f64 = 822.0;
+const POPUP_MARGIN_LOGICAL: f64 = 6.0;
 const READER_LOGICAL_WIDTH: f64 = 760.0;
 const READER_LOGICAL_HEIGHT: f64 = 560.0;
-const READER_MARGIN_LOGICAL: f64 = 28.0;
+const READER_MARGIN_LOGICAL: f64 = 20.0;
 const BLUR_GRACE_MS: u128 = 260;
 const FOCUS_TRANSFER_WAIT_MS: u64 = 130;
 const MAX_FETCH_BYTES: usize = 2 * 1024 * 1024;
